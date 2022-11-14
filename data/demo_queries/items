@@ -1,0 +1,8 @@
+SELECT {
+  ?item name  ?itemName  ;
+        price ?itemPrice .
+}
+WHERE {
+  ?item 56 ?itemName ;
+        57 ?itemPrice .
+}
