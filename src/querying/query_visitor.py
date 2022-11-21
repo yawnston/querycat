@@ -1,15 +1,8 @@
 from typing import List
-from antlr4 import *
 
-from querycat.src.querying.antlr_generated.QuerycatVisitor import QuerycatVisitor
 from querycat.src.querying.antlr_generated.QuerycatParser import QuerycatParser
-from querycat.src.querying.model import (
-    Query,
-    SelectClause,
-    Triple,
-    Variable,
-    WhereClause,
-)
+from querycat.src.querying.antlr_generated.QuerycatVisitor import QuerycatVisitor
+from querycat.src.querying.model import Query, SelectClause, Triple, Variable
 
 
 class QueryVisitor(QuerycatVisitor):
@@ -34,13 +27,31 @@ class QueryVisitor(QuerycatVisitor):
         return SelectClause(triples=triples, variables=[])
 
     def visitWhereClause(self, ctx: QuerycatParser.WhereClauseContext):
-        return WhereClause(triples=[], variables=[], filter=None)
+        return self.visitGroupGraphPattern(ctx.groupGraphPattern())
+
+    def visitGroupGraphPattern(self, ctx: QuerycatParser.GroupGraphPatternContext):
+        # TODO: nested graph patterns
+        # TODO: filters, optional, union etc
+        # TODO: what if there is only one block here?
+        triples_lists = [self.visit(x) for x in ctx.triplesBlock()]
+        return [triple for list in triples_lists for triple in list]
 
     def visitSelectTriples(
         self, ctx: QuerycatParser.SelectTriplesContext
     ) -> List[Triple]:
         same_subject_triples: List[Triple] = ctx.triplesSameSubject().accept(self)
         more_triples_node = ctx.selectTriples()
+        if more_triples_node is not None:
+            more_triples: List[Triple] = more_triples_node.accept(self)
+        else:
+            more_triples = []
+
+        return same_subject_triples + more_triples
+
+    def visitTriplesBlock(self, ctx: QuerycatParser.TriplesBlockContext):
+        # For now duplicated with select triples
+        same_subject_triples: List[Triple] = ctx.triplesSameSubject().accept(self)
+        more_triples_node = ctx.triplesBlock()
         if more_triples_node is not None:
             more_triples: List[Triple] = more_triples_node.accept(self)
         else:
@@ -59,8 +70,10 @@ class QueryVisitor(QuerycatVisitor):
             Triple(subject=subject, morphism=morphism, object=object)
             for morphism, object in morphisms_and_objects
         ]
-    
-    def visitPropertyListNotEmpty(self, ctx: QuerycatParser.PropertyListNotEmptyContext):
+
+    def visitPropertyListNotEmpty(
+        self, ctx: QuerycatParser.PropertyListNotEmptyContext
+    ):
         verb_nodes = ctx.verb()
         object_nodes = ctx.objectList()
 
@@ -72,7 +85,9 @@ class QueryVisitor(QuerycatVisitor):
                 morphisms_and_objects.append((morphism, object))
         return morphisms_and_objects
 
-    def visitSchemaMorphismOrPath(self, ctx: QuerycatParser.SchemaMorphismOrPathContext):
+    def visitSchemaMorphismOrPath(
+        self, ctx: QuerycatParser.SchemaMorphismOrPathContext
+    ):
         # TODO: compound morphisms
         return ctx.getText()
 

@@ -1,3 +1,4 @@
+from querycat.src.planning.mapper import Mapper
 from querycat.src.querying.query_parser import QueryParser
 
 if __name__ == "__main__":
@@ -11,4 +12,7 @@ if __name__ == "__main__":
                 57 ?itemPrice .
         }
     """
-    QueryParser().parse(query_string)
+
+    query = QueryParser().parse(query_string)
+    mapping = Mapper().get_mapping(query)
+    pass
