@@ -319,7 +319,7 @@ WHERE {
 ```
 
 ```
-qPart = `[?customer 5 ?fullName .]`
+qPart = `[?customer 5 ?fullName]`
 kinds = [list of unique kinds in query part]
 wrapper = database wrapper for this query part
 
@@ -330,17 +330,52 @@ for statement in qPart:
     if statement is a triple:
         subject, morphism, object = statement
         kind, mapping = getKind(morphism)
-        propertyName = getPropertyName(morphism, mapping)
         if isRootProperty(morphism, mapping):
-            wrapper.addSelection(kind, propertyName)  # We don't have to worry about cardinality with just one morphism like this
+            propertyName = getPropertyName(morphism, mapping)
+            wrapper.addSelection(kind, propertyName, isDual=False)
 
 return wrapper.buildQuery()
 ```
 
 ```
-SELECT full_name
+SELECT id, full_name
 FROM customer
 ```
+
+-> returns:
+```
+1, Adam Atkinson
+2, Beatrice Betwixt
+3, Chester Camelot
+4, Daniel Dastardly
+```
+
+-> instance category:
+customer (instance object):
+    {(id, 1)}
+    {(id, 2)}
+    {(id, 3)}
+    {(id, 4)}
+
+full name (instance object):
+    {(ε, "Adam Atkinson")}
+    {(ε, "Beatrice Betwixt")}
+    {(ε, "Chester Camelot")}
+    {(ε, "Daniel Dastardly")}
+
+5 (instance morphism):
+    ((id, 1), (ε, "Adam Atkinson"))
+    ((id, 2), (ε, "Beatrice Betwixt"))
+    ((id, 3), (ε, "Chester Camelot"))
+    ((id, 4), (ε, "Daniel Dastardly"))
+
+Instantiation of `SELECT` clause:
+    for each variable in `SELECT`:
+        include the active domain of that variable in the result instance category
+
+    for each triple in `SELECT`:
+        subject, morphism, object = triple
+        instance morphism = compound instance morphism between subject and object in the instance category
 
 
 ### A02 Trivial selection from single kind (dual morphism)
@@ -350,11 +385,33 @@ SELECT {
     ?customer fullName ?fullName .
 }
 WHERE {
-    ?customer -95 ?fullName . # Dual morphism of 95, which is dual morphism of 5, meaning this should mean 5
+    ?fullName -5 ?customer .
 }
 ```
 
-TODO: solution
+```
+qPart = `[?fullName -5 ?customer]`
+kinds = [list of unique kinds in query part]
+wrapper = database wrapper for this query part
+
+for kind in kinds:
+    wrapper.addKind(kind)
+
+for statement in qPart:
+    if statement is a triple:
+        subject, morphism, object = statement
+        if isDual(morphism):
+            kind, mapping = getKind(dual(morphism))
+        else:
+            kind, mapping = getKind(morphism)
+        if isRootProperty(dual(morphism), mapping):
+            propertyName = getPropertyName(dual(morphism), mapping)
+            wrapper.addSelection(kind, propertyName, isDual=isDual(morphism))
+
+return wrapper.buildQuery()
+```
+
+The query and instance category here should be the same as in A01.
 
 ### A03 Selection from two kinds with explicit variable (JOIN)
 
@@ -370,7 +427,44 @@ WHERE {
 }
 ```
 
-TODO: solution
+```
+qPart = `[?order 14 ?customer, ?order 13 ?orderId, ?customer 4 ?customerName]`
+kinds = [list of unique kinds in query part]
+wrapper = database wrapper for this query part
+
+for kind in kinds:
+    wrapper.addKind(kind)
+
+for statement in qPart:
+    if statement is a triple:
+        subject, morphism, object = statement
+        kind, mapping = getKind(morphism)
+        if isRootProperty(morphism, mapping):
+            propertyName = getPropertyName(morphism, mapping)
+            if isInlinedFromAnotherKind(morphism, mapping):
+                if is part of `ids` in that kind: # TODO: what if it's not?
+                    wrapper.addSelection(kind, propertyName)
+                    otherKind = getOtherKind(kind, morphism) # TODO: what if there are multiple kinds like this? what then?
+                    otherPropertyName = getPropertyName(rest of inlined morphism, otherKind.mapping)
+                    wrapper.addJoin(kind, otherKind, propertyName, otherPropertyName)
+            else:
+                wrapper.addSelection(kind, propertyName)
+
+return wrapper.buildQuery()
+```
+
+```
+SELECT order.id, order.customer_id, customer.full_name # TODO: IMO we do need the customer ID in the instance category
+FROM order INNER JOIN customer ON order.customer_id = customer.id
+```
+
+Instantiation of `SELECT` clause:
+    for each variable in `SELECT`:
+        include the active domain of that variable in the result instance category
+
+    for each triple in `SELECT`:
+        subject, morphism, object = triple
+        instance morphism = compound instance morphism between subject and object in the instance category
 
 ### A04 Selection from two kinds using path notation (JOIN)
 
