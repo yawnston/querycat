@@ -1,8 +1,8 @@
 from typing import List
 
-from querycat.src.querying.antlr_generated.QuerycatParser import QuerycatParser
-from querycat.src.querying.antlr_generated.QuerycatVisitor import QuerycatVisitor
-from querycat.src.querying.model import Query, SelectClause, Triple, Variable
+from querycat.src.parsing.antlr_generated.QuerycatParser import QuerycatParser
+from querycat.src.parsing.antlr_generated.QuerycatVisitor import QuerycatVisitor
+from querycat.src.parsing.model import Query, SelectClause, Triple, Variable
 
 
 class QueryVisitor(QuerycatVisitor):

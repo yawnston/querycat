@@ -1,8 +1,8 @@
 from antlr4 import *
-from querycat.src.querying.antlr_generated.QuerycatLexer import QuerycatLexer
-from querycat.src.querying.antlr_generated.QuerycatParser import QuerycatParser
-from querycat.src.querying.model import Query
-from querycat.src.querying.query_visitor import QueryVisitor
+from querycat.src.parsing.antlr_generated.QuerycatLexer import QuerycatLexer
+from querycat.src.parsing.antlr_generated.QuerycatParser import QuerycatParser
+from querycat.src.parsing.model import Query
+from querycat.src.parsing.query_visitor import QueryVisitor
 
 
 class QueryParser:

@@ -5,8 +5,8 @@ from querycat.src.open_api_definition_client.api.mapping_controller.get_all_mapp
 )
 from querycat.src.open_api_definition_client.client import Client
 from querycat.src.open_api_definition_client.models.mapping_view import MappingView
-from querycat.src.planning.model import Mapping
-from querycat.src.querying.model import Query
+from querycat.src.querying.mapping_model import Mapping
+from querycat.src.parsing.model import Query
 
 
 class Mapper:

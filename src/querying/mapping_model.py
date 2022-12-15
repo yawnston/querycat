@@ -2,7 +2,7 @@ from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
 import json
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List
 
 from querycat.src.open_api_definition_client.models.mapping_view import MappingView
 

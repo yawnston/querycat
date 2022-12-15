@@ -667,14 +667,61 @@ aggregations and subqueries)
 
 Create DB wrapper for this query part
 For each variable in query part:
-    // For example 2 different customer variables have separate mappings
+    // For example 2 different customer variables have separate mappings because we want to use different operations on them
     Define variable-kind mapping in wrapper
 
 For each statement in query part:
+    If statement is a triple with a composite morphism:
+        Decompose triple into separate triples with base morphisms // TODO: can we do this? For example how about inlined attributes and their selection
+
+For each statement in query part:
     If statement is a triple:
-        ...
+        subject, predicate, object = statement
+        if subject or object is in another query part:
+            defer selection to merging step
+        if subject and object are within the same kind:
+            if subject and object are nonterminals:
+                do nothing
+            else if subject is nonterminal and object is terminal:
+                if subject is root:
+                    // TODO: add solution for 2 different subjects leading to the same variable in two triples (selection? how?)
+                    wrapper.addProjection(getKind(subject), property)
+                else:
+                    // TODO: do we actually need two different methods? I think we don't, and the same in selection
+                    wrapper.addNestedProjection(getKind(subject), property)
+            else if subject is terminal and object is nonterminal:
+                do the same as the other way around, just for subject
+        else subject and objects are in different kinds from this query part:
+            one of these kinds has some kind of inlined property from the other kind // TODO: is this always true? how about graph models? And how about cases when there are multiple in common?
+            find the inlined property (the morphism is part of it)
+            if wrapper.supportsGraphTraversal:
+                wrapper.addTraversal(getKind(subject), getKind(object))
+            else if wrapper.supportsJoins:
+                // TODO: I don't think we need any extra projection here
+                wrapper.addJoin(getKind(subject), getKind(object), commonPropertyBetweenKinds)
+
     Else if statement is `FILTER`:
-        ...
+        lhs, operator, rhs = statement
+        if lhs > rhs then swap lhs and rhs // Ordering given variable > aggregation > constatnt
+        if lhs is variable and rhs is constant:
+            wrapper.addSelection(getKind(lhs), getPropertyName(lhs), condition={
+                operator: operator,
+                constant: rhs,
+            })
+        else if lhs is variable and rhs is variable:
+            if lhs and rhs are in this query part:
+                wrapper.addSelection(getKind(lhs), getPropertyName(lhs), getKind(rhs),
+                    getPropertyName(rhs), operator)
+            else:
+                defer selection to merging step
+        else if lhs is variable and rhs is aggregation:
+            if lhs and rhs variable are in this query part:
+                wrapper.addAggregation(getKind(rhs), aggregationKind(rhs), alias)
+                wrapper.addSelection(getKind(lhs), getPropertyName(lhs), alias, operator)
+            else:
+                defer selection to merging step
+        else:
+            // TODO: does it make sense to support cases with 2 aggregations or 1 aggregation and 1 constant?
     Else if statement is `OPTIONAL`:
         ...
     Else if statement is `UNION`:
@@ -700,3 +747,29 @@ For each join in list of joins:
 
 For each delayed statement:
     Execute delayed statement
+
+Result of this step is an instance category representing the `WHERE` clause, with bindings for each variable
+
+## Projection
+
+for each variable in `SELECT`:
+        include the active domain of that variable in the result instance category
+
+for each triple in `SELECT`:
+    subject, morphism, object = triple
+    if object is constant:
+        instance morphism = morphism projecting to the constant
+    else if object is variable:
+        instance morphism = compound instance morphism between subject and object in the instance category
+    else if object is aggregation:
+        calculate compound morphism between subject and object, and use it to calculate the aggregation
+        instance morphism = morphism projecting to the aggregation result
+    
+    if object is an alias:
+        add variable to list of aliases
+
+if query has `ORDER BY`, `LIMIT` or `OFFSET`:
+    introduce additional ordering instance category
+    if limit or offset is present, implement by counting nontrivial connectivity components in the instance category
+
+return finished instance category

@@ -1,5 +1,5 @@
-from querycat.src.planning.mapper import Mapper
-from querycat.src.querying.query_parser import QueryParser
+from querycat.src.querying.mapper import Mapper
+from querycat.src.parsing.query_parser import QueryParser
 
 if __name__ == "__main__":
     query_string = """
