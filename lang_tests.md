@@ -624,6 +624,9 @@ WHERE {
 
 # Algorithm
 
+// TODO: morphism cardinality meaning -> what does it mean?
+// TODO: traversing morphisms with minus -> we always do inner join anyways? why does it matter?
+
 ## Creating query plan
 
 For each distinct morphism in query `WHERE` clause:

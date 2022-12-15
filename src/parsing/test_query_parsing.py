@@ -1,4 +1,4 @@
-from querycat.src.querying.mapper import Mapper
+from querycat.src.querying.mmcat_client import MMCat
 from querycat.src.parsing.query_parser import QueryParser
 
 if __name__ == "__main__":
@@ -14,5 +14,7 @@ if __name__ == "__main__":
     """
 
     query = QueryParser().parse(query_string)
-    mapping = Mapper().get_mappings(query)
+    mmcat = MMCat(schema_id=1)
+    mapping = mmcat.get_mappings()
+    schema_category = mmcat.get_schema_category()
     pass
