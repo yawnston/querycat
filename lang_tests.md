@@ -332,7 +332,7 @@ for statement in qPart:
         kind, mapping = getKind(morphism)
         if isRootProperty(morphism, mapping):
             propertyName = getPropertyName(morphism, mapping)
-            wrapper.addSelection(kind, propertyName, isDual=False)
+            wrapper.addProjection(kind, propertyName, isDual=False)
 
 return wrapper.buildQuery()
 ```
@@ -340,6 +340,12 @@ return wrapper.buildQuery()
 ```
 SELECT id, full_name
 FROM customer
+```
+
+```
+db.customer.aggregate([
+    { $project: { full_name: 1 } }
+])
 ```
 
 -> returns:
@@ -378,6 +384,8 @@ Instantiation of `SELECT` clause:
         instance morphism = compound instance morphism between subject and object in the instance category
 
 
+#### A01b The same but with MongoDB
+
 ### A02 Trivial selection from single kind (dual morphism)
 
 ```
@@ -406,7 +414,7 @@ for statement in qPart:
             kind, mapping = getKind(morphism)
         if isRootProperty(dual(morphism), mapping):
             propertyName = getPropertyName(dual(morphism), mapping)
-            wrapper.addSelection(kind, propertyName, isDual=isDual(morphism))
+            wrapper.addProjection(kind, propertyName, isDual=isDual(morphism))
 
 return wrapper.buildQuery()
 ```
@@ -443,12 +451,12 @@ for statement in qPart:
             propertyName = getPropertyName(morphism, mapping)
             if isInlinedFromAnotherKind(morphism, mapping):
                 if is part of `ids` in that kind: # TODO: what if it's not?
-                    wrapper.addSelection(kind, propertyName)
+                    wrapper.addProjection(kind, propertyName)
                     otherKind = getOtherKind(kind, morphism) # TODO: what if there are multiple kinds like this? what then?
-                    otherPropertyName = getPropertyName(rest of inlined morphism, otherKind.mapping)
+                    otherPropertyName = getPropertyName(last base morphism of inlined morphism, otherKind.mapping)
                     wrapper.addJoin(kind, otherKind, propertyName, otherPropertyName)
             else:
-                wrapper.addSelection(kind, propertyName)
+                wrapper.addProjection(kind, propertyName)
 
 return wrapper.buildQuery()
 ```
@@ -476,11 +484,13 @@ SELECT {
 WHERE {
     ?order 14/4 ?customerName ;
         13 ?orderId .
-    ?customer 4 ?customerName .
 }
 ```
 
-TODO: solution
+Compound morphisms like this are processed by the trivial algorithm identically to case A03,
+meaning the `14/4` shorthand is treated as if a variable was manually specified for each composition.
+The improved algorithm versions can skip selecting intermediate data, and already include a composite
+instance morphism in the instance category induced by the `WHERE` clause.
 
 ### A05 Selection from one kind using FILTER
 
@@ -496,7 +506,39 @@ WHERE {
 }
 ```
 
-TODO: solution
+```
+qPart = `[?customer 4 ?customerName, ?customer 3 ?customerId, FILTER(?customerId == 42)]`
+kinds = [list of unique kinds in query part]
+wrapper = database wrapper for this query part
+
+for kind in kinds:
+    wrapper.addKind(kind)
+
+for statement in qPart:
+    if statement is a triple:
+        subject, morphism, object = statement
+        kind, mapping = getKind(morphism)
+        if isRootProperty(morphism, mapping):
+            propertyName = getPropertyName(morphism, mapping)
+            wrapper.addProjection(kind, propertyName, isDual=False)
+    else if statement is `FILTER`:
+        lhs, operator, rhs = statement
+        if lhs is variable and rhs is constant:
+            if lhs is root property of kind:
+                propertyName = property name of lhs in kind
+                wrapper.addSelection(kind, propertyName, condition={
+                    operator: operator,
+                    constant: rhs,
+                })
+
+return wrapper.buildQuery()
+```
+
+```
+SELECT id, full_name
+FROM customer
+WHERE id = 42
+```
 
 ### A06 Selection using join table
 
@@ -579,3 +621,82 @@ WHERE {
     FILTER (COUNT(?orderId) >= 10)
 }
 ```
+
+# Algorithm
+
+## Creating query plan
+
+For each distinct morphism in query `WHERE` clause:
+    If morphism is only in one kind:
+        Assign morphism to that kind
+    Else morphism is in multiple kinds:
+        Create query plans for all possibilities
+
+// TODO: do we need to prune invalid plans? Like could not using the whole inlined morphism be invalid?
+
+Query plan = list of distinct morphisms, each has a source kind assigned, maximal contiguous subgraphs from the same DB are called query parts
+
+## Creating join plans for each query plan
+
+For each pair of neighboring query parts:
+    Find intersection schema object (always exists, exactly 1)
+    Define instance category join in this schema object (always inner join)
+    For both query parts, add selection of `ids` properties of the intersection schema object
+
+For each query part:
+    // TODO: determine reasons that it cannot be satisfied (e.g. no support for joins and multiple kinds)
+    If query part cannot be satisfied by 1 query:
+        Split query part into multiple so that each can be satisfied with 1 query
+        For each cross-cutting statement for this query part:
+            Add this statement to list of things to execute manually
+
+## Selecting the best query plan
+
+// TODO: for now we can select for example the lowest number of joins
+// Penalize inefficient query plans based on heuristics
+For each query plan:
+    // (mongo)-(postgre)-(mongo) vs (mongo)-(mongo)-(mongo)
+    If plan contains jagged paths then penalize plan
+    If plan contains aggregations which cannot be done on DB level then penalize plan
+    If plan involves a lot of joining on engine level then penalize plan
+
+## Processing query parts
+
+(So far this does not consider `ORDER BY` and `LIMIT/OFFSET`, as well as projection-level
+aggregations and subqueries)
+
+Create DB wrapper for this query part
+For each variable in query part:
+    // For example 2 different customer variables have separate mappings
+    Define variable-kind mapping in wrapper
+
+For each statement in query part:
+    If statement is a triple:
+        ...
+    Else if statement is `FILTER`:
+        ...
+    Else if statement is `OPTIONAL`:
+        ...
+    Else if statement is `UNION`:
+        ...
+    // TODO: are we going to have `INTERSECTION`? SPARQL doesn't have it
+    Else if statement is `MINUS`:
+        ...
+    Else:
+        Not supported
+
+// TODO: should the DB wrapper itself do joins if multiple queries? Or should the algorithm create multiple wrappers and join results?
+// My proposed solution is to use the wrapper to divide the query into parts where each can be satisfied with 1 query
+// Then we join them and execute any possible remaining filters manually
+Build query from wrapper
+Execute query and receive instance category from wrapper
+Return given instance category
+
+## Merging query parts
+
+Get list of instance categories from list of query parts (1 per each)
+For each join in list of joins:
+    Join instance categories using the join condition, creating a merged instance category
+
+For each delayed statement:
+    Execute delayed statement

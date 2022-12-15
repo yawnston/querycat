@@ -14,5 +14,5 @@ if __name__ == "__main__":
     """
 
     query = QueryParser().parse(query_string)
-    mapping = Mapper().get_mapping(query)
+    mapping = Mapper().get_mappings(query)
     pass

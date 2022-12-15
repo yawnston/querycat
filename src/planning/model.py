@@ -41,6 +41,8 @@ class Name(ABC):
         if dict["_class"] == "DynamicName":
             return DynamicName(signature=Signature.from_dict(dict["signature"]))
 
+        raise UnknownMappingElementError(dict)
+
 
 @dataclass
 class StaticName(Name):
@@ -67,7 +69,7 @@ class SimpleValue:
 @dataclass
 class AccessPath(ABC):
     name: Name
-    value: Union[SimpleValue, "ComplexProperty"]
+    # value: Union[SimpleValue, "ComplexProperty"]
 
     @staticmethod
     def from_dict(dict: Dict[str, Any]) -> "AccessPath":
@@ -85,7 +87,11 @@ class SimpleProperty(AccessPath):
 
     @staticmethod
     def from_dict(dict: Dict[str, Any]) -> "SimpleProperty":
-        ...
+        return SimpleProperty(
+            name=Name.from_dict(dict["name"]),
+            value=SimpleValue.from_dict(dict["value"]),
+        )
+
 
 @dataclass
 class ComplexProperty(AccessPath):
@@ -94,7 +100,11 @@ class ComplexProperty(AccessPath):
 
     @staticmethod
     def from_dict(dict: Dict[str, Any]) -> "ComplexProperty":
-        ...
+        return ComplexProperty(
+            name=Name.from_dict(dict["name"]),
+            signature=Signature.from_dict(dict["signature"]),
+            subpaths=[AccessPath.from_dict(x) for x in dict["subpaths"]],
+        )
 
 
 @dataclass
@@ -114,6 +124,6 @@ class Mapping:
             root_object_id=mapping_view.root_object_id,
             root_morphism_id=mapping_view.root_morphism_id,
             access_path=AccessPath.from_dict(content_dict["accessPath"]),
-            kind_name=AccessPath.from_dict(content_dict["kindName"]),
+            kind_name=content_dict["kindName"],
             pkey=[Signature.from_dict(x) for x in content_dict["pkey"]],
         )
