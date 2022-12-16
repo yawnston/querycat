@@ -625,29 +625,40 @@ WHERE {
 # Algorithm
 
 // TODO: morphism cardinality meaning -> what does it mean?
+    - it always is 0,1 lower, 1 upper
 // TODO: traversing morphisms with minus -> we always do inner join anyways? why does it matter?
+    - technically it can be just inner join, but maybe left/right join is faster? -> evaluate, try to maybe find a paper about it
 
 ## Creating query plan
 
-For each distinct morphism in query `WHERE` clause:
+For each morphism in query `WHERE` clause:
     If morphism is only in one kind:
         Assign morphism to that kind
     Else morphism is in multiple kinds:
         Create query plans for all possibilities
 
+-> only allow selecting from morphisms which have their root in the `WHERE` clause
+    -> otherwise we can e.g. try to select all products from orders collection in mongo (can be incomplete, duplicities)
+
 // TODO: do we need to prune invalid plans? Like could not using the whole inlined morphism be invalid?
 
-Query plan = list of distinct morphisms, each has a source kind assigned, maximal contiguous subgraphs from the same DB are called query parts
+Query plan = list of morphisms, each has a source kind assigned, maximal contiguous subgraphs from the same DB are called query parts
+    -> example of non contiguous: customers and orders in postgre, but not between them
+    -> not distinct - recursion (we try to do the whole recursion in the system at the same time if it supports it)
+    -> transitivity vs repeated query parts (+ create example for each case)
+
+-> constraint of our approach: we only consider explicit statements, not user defined functions
 
 ## Creating join plans for each query plan
 
 For each pair of neighboring query parts:
-    Find intersection schema object (always exists, exactly 1)
+    Find intersection schema object (always exists, can be multiple if multiple identifiers)
     Define instance category join in this schema object (always inner join)
     For both query parts, add selection of `ids` properties of the intersection schema object
 
 For each query part:
     // TODO: determine reasons that it cannot be satisfied (e.g. no support for joins and multiple kinds)
+    // TODO: merge graph traversal and join capability into just join capability
     If query part cannot be satisfied by 1 query:
         Split query part into multiple so that each can be satisfied with 1 query
         For each cross-cutting statement for this query part:
@@ -662,6 +673,7 @@ For each query plan:
     If plan contains jagged paths then penalize plan
     If plan contains aggregations which cannot be done on DB level then penalize plan
     If plan involves a lot of joining on engine level then penalize plan
+    If limit/orderby/skip/aggregations have to be done on engine level then penalize plan
 
 ## Processing query parts
 
@@ -730,6 +742,7 @@ For each statement in query part:
     Else if statement is `UNION`:
         ...
     // TODO: are we going to have `INTERSECTION`? SPARQL doesn't have it
+        -> we don't need the clause in MMQL, as for generating queries then we can use joins+selection for now, but it is more efficient to generate intersection
     Else if statement is `MINUS`:
         ...
     Else:
@@ -754,6 +767,8 @@ For each delayed statement:
 Result of this step is an instance category representing the `WHERE` clause, with bindings for each variable
 
 ## Projection
+
+-> zakazeme kruznice v `WHERE` klauzuli (s vyjimkou rekurze)
 
 for each variable in `SELECT`:
         include the active domain of that variable in the result instance category
