@@ -2,7 +2,8 @@ from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
 import json
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
+from querycat.src.open_api_definition_client.models.database_view import DatabaseView
 
 from querycat.src.open_api_definition_client.models.mapping_view import MappingView
 
@@ -71,6 +72,9 @@ class AccessPath(ABC):
     name: Name
     # value: Union[SimpleValue, "ComplexProperty"]
 
+    def get_property_name(self, morphism: str, accumulator: str) -> Optional[str]:
+        ...
+
     @staticmethod
     def from_dict(dict: Dict[str, Any]) -> "AccessPath":
         if dict["_class"] == "SimpleProperty":
@@ -85,6 +89,15 @@ class AccessPath(ABC):
 class SimpleProperty(AccessPath):
     value: SimpleValue
 
+    def get_property_name(self, morphism: str, accumulator: str) -> Optional[str]:
+        if isinstance(self.name, DynamicName):
+            return None  # TODO: dynamic names
+        new_accumulator = accumulator + f".{self.name.value}"
+        if int(morphism) in self.value.signature.ids:
+            return new_accumulator
+
+        return None
+
     @staticmethod
     def from_dict(dict: Dict[str, Any]) -> "SimpleProperty":
         return SimpleProperty(
@@ -97,6 +110,20 @@ class SimpleProperty(AccessPath):
 class ComplexProperty(AccessPath):
     signature: Signature
     subpaths: List[AccessPath]
+
+    def get_property_name(self, morphism: str, accumulator: str) -> Optional[str]:
+        new_accumulator = (accumulator + f".{self.name.value}").strip(
+            "."
+        )  # TODO: dynamic names
+        if int(morphism) in self.signature.ids:
+            return new_accumulator
+
+        for subpath in self.subpaths:
+            found_property = subpath.get_property_name(morphism, new_accumulator)
+            if found_property:
+                return found_property
+
+        return None
 
     @staticmethod
     def from_dict(dict: Dict[str, Any]) -> "ComplexProperty":
@@ -115,6 +142,10 @@ class Mapping:
     category_id: int
     root_object_id: int
     root_morphism_id: int
+    database: DatabaseView
+
+    def get_property_name(self, morphism: str) -> Optional[str]:
+        return self.access_path.get_property_name(morphism, accumulator="")
 
     @staticmethod
     def from_mapping_view(mapping_view: MappingView) -> "Mapping":
@@ -126,4 +157,5 @@ class Mapping:
             access_path=AccessPath.from_dict(content_dict["accessPath"]),
             kind_name=content_dict["kindName"],
             pkey=[Signature.from_dict(x) for x in content_dict["pkey"]],
+            database=mapping_view.database_view,
         )

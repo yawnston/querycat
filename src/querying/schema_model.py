@@ -92,6 +92,12 @@ class SchemaCategory:
     objects: List[SchemaObject]
     morphisms: List[SchemaMorphism]
 
+    def get_object(self, id: int) -> SchemaObject:
+        return [x for x in self.objects if x.id == id][0]
+
+    def get_morphism(self, morphism: str) -> SchemaMorphism:
+        return [x for x in self.morphisms if x.signature.ids[0] == int(morphism)][0]
+
     @staticmethod
     def from_category_view(schema_category: SchemaCategoryWrapper) -> "SchemaCategory":
         objects = [SchemaObject.from_object_view(x) for x in schema_category.objects]

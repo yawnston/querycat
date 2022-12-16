@@ -46,6 +46,9 @@ class Triple:
     object: Union["Variable", str]
 
 
+Statement = Union[Triple, Filter]
+
+
 @dataclass
 class Variable:
     name: str
