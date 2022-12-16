@@ -766,6 +766,8 @@ For each delayed statement:
 
 Result of this step is an instance category representing the `WHERE` clause, with bindings for each variable
 
+// TODO: we can't do merging with evocat for now because we can't get the data/statements into it
+
 ## Projection
 
 -> zakazeme kruznice v `WHERE` klauzuli (s vyjimkou rekurze)

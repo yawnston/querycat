@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from enum import Enum
 from typing import List, Union
 
 
@@ -19,7 +20,23 @@ class SelectClause:
 class WhereClause:
     triples: List["Triple"]
     variables: List["Variable"]
-    filter: None  # TODO: finish the model
+    filters: List["Filter"]
+
+
+class ComparisonOperator(str, Enum):
+    EQUALS = "="
+    NOT_EQUALS = "!="
+    LESS_THAN = "<"
+    LESS_THAN_EQUALS = "<="
+    GREATER_THAN = ">"
+    GREATER_THAN_EQUALS = ">="
+
+
+@dataclass
+class Filter:
+    lhs: Union["Variable", str, int]
+    operator: ComparisonOperator
+    rhs: Union["Variable", str, int]
 
 
 @dataclass

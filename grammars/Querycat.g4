@@ -3,13 +3,29 @@ grammar Querycat;
 query:
 	selectQuery EOF;
 
-selectQuery: selectClause whereClause;
+selectQuery: selectClause whereClause solutionModifier;
 
 selectClause: 'SELECT' selectGraphPattern;
 
 selectGraphPattern: '{' selectTriples? '}';
 
 whereClause: 'WHERE'? groupGraphPattern;
+
+solutionModifier: orderClause? limitOffsetClauses?;
+
+limitOffsetClauses: (
+		limitClause offsetClause?
+		| offsetClause limitClause?
+	);
+
+orderClause: 'ORDER' 'BY' orderCondition+;
+
+orderCondition: (( 'ASC' | 'DESC') brackettedExpression)
+	| ( constraint | var_);
+
+limitClause: 'LIMIT' INTEGER;
+
+offsetClause: 'OFFSET' INTEGER;
 
 groupGraphPattern:
 	'{' triplesBlock? (
@@ -54,17 +70,31 @@ primaryMorphism: SCHEMA_MORPHISM;
 
 dualMorphism: '-' primaryMorphism;
 
-graphNode: varOrTerm;
+graphNode: varOrTerm ( 'AS' var_)?;
 
-varOrTerm: var_ | graphTerm;
+varOrTerm: var_ | constantTerm | aggregationTerm;
 
 var_: VAR1 | VAR2;
 
-graphTerm:
+constantTerm:
 	numericLiteral
 	| booleanLiteral
+	| string_
 	| blankNode
 	| NIL;
+
+aggregationTerm:
+	aggregationFunc '(' (distinctModifier)? var_ ')';
+
+distinctModifier:
+	'DISTINCT';
+
+aggregationFunc:
+	'COUNT'
+	| 'SUM'
+	| 'AVG'
+	| 'MIN'
+	| 'MAX';
 
 expression: conditionalOrExpression;
 
@@ -76,45 +106,26 @@ conditionalAndExpression: valueLogical ( '&&' valueLogical)*;
 valueLogical: relationalExpression;
 
 relationalExpression:
-	numericExpression (
-		'=' numericExpression
-		| '!=' numericExpression
-		| '<' numericExpression
-		| '>' numericExpression
-		| '<=' numericExpression
-		| '>=' numericExpression
+	expressionPart (
+		'=' expressionPart
+		| '!=' expressionPart
+		| '<' expressionPart
+		| '>' expressionPart
+		| '<=' expressionPart
+		| '>=' expressionPart
 	)?;
 
-numericExpression: additiveExpression;
-
-additiveExpression:
-	multiplicativeExpression (
-		'+' multiplicativeExpression
-		| '-' multiplicativeExpression
-		| numericLiteralPositive
-		| numericLiteralNegative
-	)*;
-
-multiplicativeExpression:
-	unaryExpression ('*' unaryExpression | '/' unaryExpression)*;
-
-unaryExpression:
-	'!' primaryExpression
-	| '+' primaryExpression
-	| '-' primaryExpression
-	| primaryExpression;
+expressionPart: primaryExpression;
 
 // Deleted iriRef from here, I don't think it's needed?
 primaryExpression:
 	brackettedExpression
 	| numericLiteral
 	| booleanLiteral
-	| var_;
+	| string_
+	| varOrTerm;
 
 brackettedExpression: '(' expression ')';
-
-regexExpression:
-	'REGEX' '(' expression ',' expression (',' expression)? ')';
 
 numericLiteral:
 	numericLiteralUnsigned

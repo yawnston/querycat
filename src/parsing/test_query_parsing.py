@@ -10,6 +10,8 @@ if __name__ == "__main__":
         WHERE {
             ?item 56 ?itemName ;
                 57 ?itemPrice .
+
+            FILTER(?itemPrice = "Luxor")
         }
     """
 

@@ -2,7 +2,14 @@ from typing import List
 
 from querycat.src.parsing.antlr_generated.QuerycatParser import QuerycatParser
 from querycat.src.parsing.antlr_generated.QuerycatVisitor import QuerycatVisitor
-from querycat.src.parsing.model import Query, SelectClause, Triple, Variable
+from querycat.src.parsing.model import (
+    Filter,
+    Query,
+    SelectClause,
+    Triple,
+    Variable,
+    WhereClause,
+)
 
 
 class QueryVisitor(QuerycatVisitor):
@@ -27,14 +34,22 @@ class QueryVisitor(QuerycatVisitor):
         return SelectClause(triples=triples, variables=[])
 
     def visitWhereClause(self, ctx: QuerycatParser.WhereClauseContext):
-        return self.visitGroupGraphPattern(ctx.groupGraphPattern())
+        statements = self.visitGroupGraphPattern(ctx.groupGraphPattern())
+
+        return WhereClause(
+            triples=statements[0],
+            variables=[],
+            filters=statements[1],
+        )
 
     def visitGroupGraphPattern(self, ctx: QuerycatParser.GroupGraphPatternContext):
         # TODO: nested graph patterns
         # TODO: filters, optional, union etc
         # TODO: what if there is only one block here?
         triples_lists = [self.visit(x) for x in ctx.triplesBlock()]
-        return [triple for list in triples_lists for triple in list]
+        filters = [self.visit(x) for x in ctx.filter_()]
+        triples = [triple for list in triples_lists for triple in list]
+        return (triples, filters)
 
     def visitSelectTriples(
         self, ctx: QuerycatParser.SelectTriplesContext
@@ -105,6 +120,23 @@ class QueryVisitor(QuerycatVisitor):
         variable_name = variable_name_node.symbol.text[1:]
         return Variable(name=variable_name)
 
-    def visitGraphTerm(self, ctx: QuerycatParser.GraphTermContext):
-        # TODO: blank nodes, numbers, bools (and strings? missing in grammar so far)
-        return ctx.getText()
+    # def visitGraphTerm(self, ctx: QuerycatParser.GraphTermContext):
+    #     # TODO: blank nodes, numbers, bools, strings
+    #     return ctx.getText()
+
+    def visitString_(self, ctx: QuerycatParser.String_Context):
+        return ctx.getText().strip("\"'")
+
+    def visitRelationalExpression(
+        self, ctx: QuerycatParser.RelationalExpressionContext
+    ):
+        children = ctx.children
+        if len(children) == 1:
+            return self.visit(children[0])
+
+        if len(children) == 3:
+            return Filter(
+                lhs=self.visit(children[0]),
+                operator=ctx.children[1].getText(),
+                rhs=self.visit(children[2]),
+            )
