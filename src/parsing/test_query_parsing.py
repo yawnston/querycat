@@ -1,6 +1,6 @@
+from querycat.src.parsing.query_parser import QueryParser
 from querycat.src.querying.engine import QueryEngine
 from querycat.src.querying.mmcat_client import MMCat
-from querycat.src.parsing.query_parser import QueryParser
 
 if __name__ == "__main__":
     # query_string = """
@@ -35,5 +35,3 @@ if __name__ == "__main__":
     query_plans = engine.create_plans(preprocessed_query)
     best_plan = engine.select_best_plan(query_plans)
     result_instance = engine.execute_plan(best_plan)
-
-    pass

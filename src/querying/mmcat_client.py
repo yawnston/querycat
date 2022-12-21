@@ -1,5 +1,6 @@
 import json
 from typing import List
+
 from querycat.src.open_api_definition_client.api.mapping_controller.get_all_mappings_in_category import (
     sync_detailed as get_all_mappings,
 )
@@ -8,7 +9,9 @@ from querycat.src.open_api_definition_client.api.schema_category_controller.get_
 )
 from querycat.src.open_api_definition_client.client import Client
 from querycat.src.open_api_definition_client.models.mapping_view import MappingView
-from querycat.src.open_api_definition_client.models.schema_category_wrapper import SchemaCategoryWrapper
+from querycat.src.open_api_definition_client.models.schema_category_wrapper import (
+    SchemaCategoryWrapper,
+)
 from querycat.src.querying.mapping_model import Mapping
 from querycat.src.querying.schema_model import SchemaCategory
 

@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import List
 from uuid import uuid4
+
 from querycat.src.parsing.model import Query, Triple, Variable, WhereClause
 from querycat.src.querying.instance_model import InstanceCategory
 from querycat.src.querying.mapping_model import Mapping
@@ -68,8 +69,6 @@ class QueryEngine:
                 )
             else:
                 triple_kinds_assignments.append((triple, kinds))
-
-        pass
 
     def select_best_plan(self, plans: List[QueryPlan]) -> QueryPlan:
         ...

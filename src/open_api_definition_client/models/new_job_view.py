@@ -14,17 +14,20 @@ class NewJobView:
         mapping_id (Union[Unset, int]):
         name (Union[Unset, str]):
         type (Union[Unset, str]):
+        query (Union[Unset, str]):
     """
 
     mapping_id: Union[Unset, int] = UNSET
     name: Union[Unset, str] = UNSET
     type: Union[Unset, str] = UNSET
+    query: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
         mapping_id = self.mapping_id
         name = self.name
         type = self.type
+        query = self.query
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -35,6 +38,8 @@ class NewJobView:
             field_dict["name"] = name
         if type is not UNSET:
             field_dict["type"] = type
+        if query is not UNSET:
+            field_dict["query"] = query
 
         return field_dict
 
@@ -47,10 +52,13 @@ class NewJobView:
 
         type = d.pop("type", UNSET)
 
+        query = d.pop("query", UNSET)
+
         new_job_view = cls(
             mapping_id=mapping_id,
             name=name,
             type=type,
+            query=query,
         )
 
         new_job_view.additional_properties = d

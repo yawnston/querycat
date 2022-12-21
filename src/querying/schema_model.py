@@ -1,7 +1,8 @@
+import json
 from dataclasses import dataclass
 from enum import Enum
-import json
-from typing import Any, Dict, List, Set
+from typing import Any, Dict, List
+
 from querycat.src.open_api_definition_client.models.schema_category_wrapper import (
     SchemaCategoryWrapper,
 )
@@ -11,7 +12,6 @@ from querycat.src.open_api_definition_client.models.schema_morphism_wrapper impo
 from querycat.src.open_api_definition_client.models.schema_object_wrapper import (
     SchemaObjectWrapper,
 )
-
 from querycat.src.querying.mapping_model import Signature
 
 

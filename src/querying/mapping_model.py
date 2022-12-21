@@ -1,10 +1,10 @@
+import json
 from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
-import json
 from typing import Any, Dict, List, Optional
-from querycat.src.open_api_definition_client.models.database_view import DatabaseView
 
+from querycat.src.open_api_definition_client.models.database_view import DatabaseView
 from querycat.src.open_api_definition_client.models.mapping_view import MappingView
 
 

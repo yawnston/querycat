@@ -19,6 +19,7 @@ class Job:
         name (Union[Unset, str]):
         type (Union[Unset, JobType]):
         status (Union[Unset, JobStatus]):
+        query (Union[Unset, str]):
     """
 
     id: Union[Unset, int] = UNSET
@@ -27,6 +28,7 @@ class Job:
     name: Union[Unset, str] = UNSET
     type: Union[Unset, JobType] = UNSET
     status: Union[Unset, JobStatus] = UNSET
+    query: Union[Unset, str] = UNSET
     additional_properties: Dict[str, Any] = attr.ib(init=False, factory=dict)
 
     def to_dict(self) -> Dict[str, Any]:
@@ -41,6 +43,8 @@ class Job:
         status: Union[Unset, str] = UNSET
         if not isinstance(self.status, Unset):
             status = self.status.value
+
+        query = self.query
 
         field_dict: Dict[str, Any] = {}
         field_dict.update(self.additional_properties)
@@ -57,6 +61,8 @@ class Job:
             field_dict["type"] = type
         if status is not UNSET:
             field_dict["status"] = status
+        if query is not UNSET:
+            field_dict["query"] = query
 
         return field_dict
 
@@ -85,6 +91,8 @@ class Job:
         else:
             status = JobStatus(_status)
 
+        query = d.pop("query", UNSET)
+
         job = cls(
             id=id,
             mapping_id=mapping_id,
@@ -92,6 +100,7 @@ class Job:
             name=name,
             type=type,
             status=status,
+            query=query,
         )
 
         job.additional_properties = d
