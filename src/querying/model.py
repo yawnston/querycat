@@ -20,6 +20,7 @@ class JoinPlan:
 
 @dataclass
 class QueryPart:
+    db_query: str
     ...
 
 

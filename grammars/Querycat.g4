@@ -62,6 +62,7 @@ object_: graphNode;
 
 verb: schemaMorphismOrPath;
 
+// TODO: repeated paths
 schemaMorphismOrPath: schemaMorphism ( '/' schemaMorphism)*;
 
 schemaMorphism: primaryMorphism | dualMorphism;
