@@ -63,9 +63,9 @@ class InstanceMerger:
 
     def merge(self, query_plan: QueryPlan):
         pg_query = """SELECT id, name, surname, address_id FROM customer"""
-        mongo_query = """db.order.aggregate( [ { $project : { "_id": 1, "customer_id": 1 } } ] )"""
+        mongo_query = """db.order.aggregate( [ { $project : { "_id": 1, "customer_id": 1, "items": 1 } } ] )"""
         self.run_job(pg_query, 15, 1, 2)
-        self.run_job(mongo_query, 17, 10, 9)
+        self.run_job(mongo_query, 17, 10, 11)
 
 
 if __name__ == "__main__":

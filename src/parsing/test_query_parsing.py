@@ -17,16 +17,17 @@ if __name__ == "__main__":
     # """
     query_string = """
         SELECT {
-            ?order number ?number .
+            ?order id ?orderId ;
+                customerName ?customerName .
         }
         WHERE {
-            ?order 4 ?number .
-            FILTER(?number = 2)
+            ?order 10 ?orderId ;
+                9/2 ?customerName .
         }
     """
 
     query = QueryParser().parse(query_string)
-    mmcat = MMCat(schema_id=1)
+    mmcat = MMCat(schema_id=4)
     mappings = mmcat.get_mappings()
     schema_category = mmcat.get_schema_category()
 
