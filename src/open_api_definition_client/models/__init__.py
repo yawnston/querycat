@@ -11,6 +11,10 @@ from .database_update import DatabaseUpdate
 from .database_update_settings import DatabaseUpdateSettings
 from .database_view import DatabaseView
 from .database_view_type import DatabaseViewType
+from .domain_row_view import DomainRowView
+from .id_with_values_view import IdWithValuesView
+from .id_with_values_view_tuples import IdWithValuesViewTuples
+from .instance_morphism_view import InstanceMorphismView
 from .instance_object_view import InstanceObjectView
 from .job import Job
 from .job_status import JobStatus
@@ -18,6 +22,7 @@ from .job_type import JobType
 from .key_view import KeyView
 from .mapping_init import MappingInit
 from .mapping_options_view import MappingOptionsView
+from .mapping_row_view import MappingRowView
 from .mapping_view import MappingView
 from .model import Model
 from .model_view import ModelView
@@ -46,6 +51,10 @@ __all__ = (
     "DatabaseUpdateSettings",
     "DatabaseView",
     "DatabaseViewType",
+    "DomainRowView",
+    "IdWithValuesView",
+    "IdWithValuesViewTuples",
+    "InstanceMorphismView",
     "InstanceObjectView",
     "Job",
     "JobStatus",
@@ -53,6 +62,7 @@ __all__ = (
     "KeyView",
     "MappingInit",
     "MappingOptionsView",
+    "MappingRowView",
     "MappingView",
     "Model",
     "ModelView",
