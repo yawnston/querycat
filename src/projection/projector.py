@@ -2,7 +2,12 @@ from dataclasses import dataclass
 from typing import List, Tuple
 from uuid import uuid4
 from querycat.src.parsing.model import Triple
-from querycat.src.querying.instance_model import InstanceCategory
+from querycat.src.querying.instance_model import (
+    InstanceCategory,
+    InstanceMorphism,
+    InstanceObject,
+    MappingRow,
+)
 from querycat.src.querying.mapping_model import Signature
 
 from querycat.src.querying.model import QueryPlan
@@ -106,4 +111,63 @@ class QueryProjector:
         where_instance: InstanceCategory,
         result_schema: SchemaCategory,
     ) -> InstanceCategory:
-        ...
+        """Given a `WHERE` instance category and the schema category
+        induced by the `SELECT` clause, project the data to the final
+        instance category for the `SELECT` clause.
+        """
+        result_instance = InstanceCategory(mmcat=None, schema_category=result_schema)
+
+        for new_schema_obj in result_schema.objects:
+            instance_obj = where_instance.get_object(key=new_schema_obj.key.value)
+            result_instance._objects.append(
+                InstanceObject(
+                    key=new_schema_obj.key,
+                    columns=instance_obj.columns,
+                    rows=instance_obj.rows,
+                )
+            )
+
+        for new_schema_morphism in result_schema.morphisms:
+            path = find_path_in_schema(
+                source_key=new_schema_morphism.dom.key.value,
+                dest_key=new_schema_morphism.cod.key.value,
+                schema_category=where_instance.schema_category,
+            )
+
+            instance_path = [
+                where_instance.get_morphism(x.signature.ids[0]) for x in path
+            ]
+
+            while len(instance_path) > 1:
+                b = instance_path.pop()
+                a = instance_path.pop()
+                contraction = self._contract_morphisms(a, b)
+                instance_path.append(contraction)
+
+            final_morphism = instance_path[0]
+            result_instance._morphisms.append(
+                InstanceMorphism(
+                    signature=new_schema_morphism.signature.ids[0],
+                    mappings=final_morphism.mappings,
+                )
+            )
+        
+        return result_instance
+
+    def _contract_morphisms(
+        self, a: InstanceMorphism, b: InstanceMorphism
+    ) -> InstanceMorphism:
+        """Given morphisms (x)-a->(y)-b->(z), create a morphism
+        (x)-c->(z) via contraction.
+        """
+        contraction_rows: List[MappingRow] = []
+        for a_row in a.mappings:
+            join_rows = [
+                x.codomain_row for x in b.mappings if x.domain_row == a_row.codomain_row
+            ]
+            for b_codomain_row in join_rows:
+                contraction_rows.append(
+                    MappingRow(domain_row=a_row.domain_row, codomain_row=b_codomain_row)
+                )
+
+        return InstanceMorphism(signature=0, mappings=contraction_rows)

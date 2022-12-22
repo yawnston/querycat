@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict, List, Union
 from querycat.src.open_api_definition_client.models.domain_row_view import DomainRowView
 from querycat.src.open_api_definition_client.models.instance_morphism_view import (
     InstanceMorphismView,
@@ -33,7 +33,7 @@ class InstanceObject:
 
 @dataclass
 class InstanceMorphism:
-    signature: int
+    signature: Union[int, str]
     mappings: List["MappingRow"]
 
     @staticmethod
@@ -67,7 +67,10 @@ class DomainRow:
 
         return DomainRow(
             tuples={
-                Signature.from_base_str(signature): value for signature, value in values
+                # TODO: the .0 replace is a hack to make MongoDB and PostgreSQL ids compatible
+                # It could accidentally change some results somewhere unintentionally.
+                Signature.from_base_str(signature): value.replace(".0", "")
+                for signature, value in values
             }
         )
 
@@ -95,7 +98,7 @@ class InstanceCategory:
         found = next((x for x in self._morphisms if x.signature == signature), None)
         if not found:
             found = InstanceMorphism.from_view(
-                self._mmcat.get_instance_morphism(signature)
+                signature=signature, view=self._mmcat.get_instance_morphism(signature)
             )
             self._morphisms.append(found)
 
