@@ -9,7 +9,7 @@ from querycat.src.querying.mapping_model import (
     StaticName,
 )
 
-from querycat.src.wrappers.wrapper import Wrapper
+from querycat.src.wrappers.wrapper import Projection, Wrapper
 
 
 class MongodbWrapperError(Exception):
@@ -57,18 +57,17 @@ class MongodbWrapper(Wrapper):
 
         return {"$project": project}
 
+    def _get_var_name(self, projection: Projection) -> str:
+        return projection.property_name
+
     def build_access_path(self) -> ComplexProperty:
         # TODO: more complex access paths, joins
-        # TODO: implement
         subpaths = [
             SimpleProperty(
-                name=StaticName(value="_id"),
-                value=SimpleValue(signature=Signature(ids=[10], is_null=False)),
-            ),
-            SimpleProperty(
-                name=StaticName(value="customer_id"),
-                value=SimpleValue(signature=Signature(ids=[1, 9], is_null=False)),
-            ),
+                name=StaticName(value=self._get_var_name(projection)),
+                value=SimpleValue(signature=projection.signature),
+            )
+            for projection in self._projections
         ]
         root = ComplexProperty(
             name=StaticName(value="root"),

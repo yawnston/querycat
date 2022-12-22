@@ -128,6 +128,16 @@ class SimpleProperty(AccessPath):
 
         return None
 
+    def get_signature(
+        self, morphism: str, accumulator: List[int]
+    ) -> Optional[List[int]]:
+        new_accumulator = self.value.signature.ids + accumulator
+        # TODO: compound morphisms? we should trim this somehow
+        if int(morphism) in self.value.signature.ids:
+            return new_accumulator
+
+        return None
+
     @staticmethod
     def from_dict(dict: Dict[str, Any]) -> "SimpleProperty":
         return SimpleProperty(
@@ -159,6 +169,24 @@ class ComplexProperty(AccessPath):
             found_property = subpath.get_property_name(morphism, new_accumulator)
             if found_property:
                 return found_property
+
+        return None
+
+    def get_signature(
+        self, morphism: str, accumulator: List[int]
+    ) -> Optional[List[int]]:
+        if not self.signature.is_null:
+            new_accumulator = self.signature.ids + accumulator
+        else:
+            new_accumulator = accumulator
+        if int(morphism) in self.signature.ids:
+            # TODO: what if it's for example the 2 in 1.2.3: {...}
+            return new_accumulator
+
+        for subpath in self.subpaths:
+            found_signature = subpath.get_signature(morphism, new_accumulator)
+            if found_signature:
+                return found_signature
 
         return None
 
@@ -196,6 +224,16 @@ class Mapping:
 
         # Remove the root kind part
         return ".".join(full_name.split(".")[1:])
+
+    def get_signature(self, morphism: str) -> Optional[Signature]:
+        signature_ids = self.access_path.get_signature(morphism, accumulator=[])
+        if signature_ids is None:
+            return None
+
+        return Signature(
+            ids=signature_ids,
+            is_null=False,
+        )
 
     @staticmethod
     def from_mapping_view(mapping_view: MappingView) -> "Mapping":

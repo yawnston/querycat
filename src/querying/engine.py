@@ -7,7 +7,7 @@ from querycat.src.open_api_definition_client.models.mapping_init import MappingI
 
 from querycat.src.parsing.model import Query, Triple, Variable, WhereClause
 from querycat.src.querying.instance_model import InstanceCategory
-from querycat.src.querying.mapping_model import Mapping
+from querycat.src.querying.mapping_model import Mapping, Signature
 from querycat.src.querying.mmcat_client import MMCat
 from querycat.src.querying.model import (
     InvalidQueryPlanError,
@@ -247,6 +247,7 @@ class QueryEngine:
                             wrapper.add_projection(
                                 kind_name=kind.mapping.kind_name,
                                 property_name=kind.mapping.get_property_name(morphism),
+                                signature=kind.mapping.get_signature(morphism),
                             )
                 else:
                     raise Exception("Unknown statement type.")

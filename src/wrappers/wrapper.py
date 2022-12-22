@@ -3,7 +3,7 @@ from typing import List
 from querycat.src.open_api_definition_client.models.database_view_type import (
     DatabaseViewType,
 )
-from querycat.src.querying.mapping_model import ComplexProperty, Mapping
+from querycat.src.querying.mapping_model import ComplexProperty, Mapping, Signature
 
 
 class Operation:
@@ -14,6 +14,7 @@ class Operation:
 class Projection(Operation):
     kind_name: str
     property_name: str
+    signature: Signature
 
 
 class Wrapper:
@@ -22,11 +23,12 @@ class Wrapper:
     def __init__(self):
         self._projections = []
 
-    def add_projection(self, kind_name: str, property_name: str):
+    def add_projection(self, kind_name: str, property_name: str, signature: Signature):
         self._projections.append(
             Projection(
                 kind_name=kind_name,
                 property_name=property_name,
+                signature=signature,
             )
         )
 

@@ -32,8 +32,11 @@ class PostgresqlWrapper(Wrapper):
 
     def _get_var_alias(self, projection: Projection) -> str:
         selection = f"{projection.kind_name}.{projection.property_name}"
-        alias = f"{projection.kind_name}_{projection.property_name}"
+        alias = self._get_var_name(projection)
         return f"{selection} AS {alias}"
+
+    def _get_var_name(self, projection: Projection) -> str:
+        return f"{projection.kind_name}_{projection.property_name}"
 
     def _build_from(self) -> str:
         # TODO: joins
@@ -51,16 +54,12 @@ class PostgresqlWrapper(Wrapper):
 
     def build_access_path(self) -> ComplexProperty:
         # TODO: more complex access paths, joins
-        # TODO: implement
         subpaths = [
             SimpleProperty(
-                name=StaticName(value="customer_id"),
-                value=SimpleValue(signature=Signature(ids=[1], is_null=False)),
-            ),
-            SimpleProperty(
-                name=StaticName(value="customer_name"),
-                value=SimpleValue(signature=Signature(ids=[2], is_null=False)),
-            ),
+                name=StaticName(value=self._get_var_name(projection)),
+                value=SimpleValue(signature=projection.signature),
+            )
+            for projection in self._projections
         ]
         root = ComplexProperty(
             name=StaticName(value="root"),
