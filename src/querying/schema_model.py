@@ -95,6 +95,9 @@ class SchemaCategory:
     def get_object(self, id: int) -> SchemaObject:
         return [x for x in self.objects if x.id == id][0]
 
+    def get_object_by_key(self, key: int) -> SchemaObject:
+        return [x for x in self.objects if x.key.value == key][0]
+
     def get_morphism(self, morphism: str) -> SchemaMorphism:
         return [x for x in self.morphisms if x.signature.ids[0] == int(morphism)][0]
 

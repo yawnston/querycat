@@ -24,6 +24,12 @@ class Signature:
             is_null=dict["isNull"],
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "ids": self.ids,
+            "isNull": self.is_null,
+        }
+
 
 class NameType(str, Enum):
     STATIC_NAME = "STATIC_NAME"
@@ -44,16 +50,32 @@ class Name(ABC):
 
         raise UnknownMappingElementError(dict)
 
+    def to_dict(self) -> Dict[str, Any]:
+        ...
+
 
 @dataclass
 class StaticName(Name):
     value: str
-    type: NameType
+    type: NameType = NameType.STATIC_NAME
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "value": self.value,
+            "_class": "StaticName",
+            "type": self.type,
+        }
 
 
 @dataclass
 class DynamicName(Name):
     signature: Signature
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "signature": self.signature.to_dict(),
+            "_class": "DynamicName",
+        }
 
 
 @dataclass
@@ -66,6 +88,11 @@ class SimpleValue:
             signature=Signature.from_dict(dict["signature"]),
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "signature": self.signature.to_dict(),
+        }
+
 
 @dataclass
 class AccessPath(ABC):
@@ -73,6 +100,9 @@ class AccessPath(ABC):
     # value: Union[SimpleValue, "ComplexProperty"]
 
     def get_property_name(self, morphism: str, accumulator: str) -> Optional[str]:
+        ...
+
+    def to_dict(self) -> Dict[str, Any]:
         ...
 
     @staticmethod
@@ -105,6 +135,13 @@ class SimpleProperty(AccessPath):
             value=SimpleValue.from_dict(dict["value"]),
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "_class": "SimpleProperty",
+            "name": self.name.to_dict(),
+            "value": self.value.to_dict(),
+        }
+
 
 @dataclass
 class ComplexProperty(AccessPath):
@@ -133,6 +170,14 @@ class ComplexProperty(AccessPath):
             subpaths=[AccessPath.from_dict(x) for x in dict["subpaths"]],
         )
 
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "_class": "ComplexProperty",
+            "name": self.name.to_dict(),
+            "signature": self.signature.to_dict(),
+            "subpaths": [x.to_dict() for x in self.subpaths],
+        }
+
 
 @dataclass
 class Mapping:
@@ -145,7 +190,12 @@ class Mapping:
     database: DatabaseView
 
     def get_property_name(self, morphism: str) -> Optional[str]:
-        return self.access_path.get_property_name(morphism, accumulator="")
+        full_name = self.access_path.get_property_name(morphism, accumulator="")
+        if full_name is None:
+            return None
+
+        # Remove the root kind part
+        return ".".join(full_name.split(".")[1:])
 
     @staticmethod
     def from_mapping_view(mapping_view: MappingView) -> "Mapping":
@@ -159,3 +209,12 @@ class Mapping:
             pkey=[Signature.from_dict(x) for x in content_dict["pkey"]],
             database=mapping_view.database_view,
         )
+
+    def to_mapping_json_value(self) -> str:
+        dict = {
+            "pkey": [x.to_dict() for x in self.pkey],
+            "kindName": self.kind_name,
+            "accessPath": self.access_path.to_dict(),
+        }
+
+        return json.dumps(dict)
