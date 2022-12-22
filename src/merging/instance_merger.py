@@ -16,6 +16,12 @@ class InstanceMerger:
                 query=part.compiled.db_query, mapping_id=mapping_id
             )
 
+        # Return instance category with no data - it will be filled in
+        # automatically when the data is needed.
+        return InstanceCategory(
+            mmcat=self.mmcat, schema_category=self.mmcat.get_schema_category()
+        )
+
     def merge_test(self, query_plan: QueryPlan):
         pg_query = """SELECT id, name, surname, address_id FROM customer"""
         pg_query = """SELECT customer.id AS id, name, surname, address.id AS address_id FROM customer INNER JOIN address ON customer.address_id = address.id"""
@@ -26,11 +32,11 @@ class InstanceMerger:
         mongo_query = """db.order.aggregate( [ { $project : { "_id": 1, "customer_id": 1, "items": 1 } } ] )"""
 
         self.mmcat.run_job_with_query(query=pg_query2, mapping_id=23)
-        self.mmcat.run_job_with_query(query=mongo_query, mapping_id=17)
+        # self.mmcat.run_job_with_query(query=mongo_query, mapping_id=17)
 
         x = self.mmcat.get_instance_object(object_key=5)
         y = self.mmcat.get_instance_object(object_key=7)
-        w = self.mmcat.get_instance_morphism(signature=6)
+        w = self.mmcat.get_instance_morphism(signature=5)
         z = self.mmcat.get_instance_morphism(signature=4)
 
         pass

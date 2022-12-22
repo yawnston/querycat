@@ -2,10 +2,11 @@ import json
 from abc import ABC
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
 from querycat.src.open_api_definition_client.models.database_view import DatabaseView
 from querycat.src.open_api_definition_client.models.mapping_view import MappingView
+from querycat.src.open_api_definition_client.models.signature_view import SignatureView
 
 
 class UnknownMappingElementError(Exception):
@@ -14,8 +15,25 @@ class UnknownMappingElementError(Exception):
 
 @dataclass
 class Signature:
-    ids: List[int]
+    ids: List[Union[int, str]]
     is_null: bool
+
+    def __hash__(self) -> int:
+        return hash(tuple(self.ids))
+
+    @staticmethod
+    def from_view(view: SignatureView) -> "Signature":
+        return Signature(
+            ids=view.ids,
+            is_null=view.is_null,
+        )
+
+    @staticmethod
+    def from_base_str(s: str) -> "Signature":
+        if s == "_EMPTY":
+            return Signature(ids=[], is_null=False)
+
+        return Signature(ids=[int(s)], is_null=False)
 
     @staticmethod
     def from_dict(dict: Dict[str, Any]) -> "Signature":

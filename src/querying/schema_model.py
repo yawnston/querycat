@@ -1,7 +1,7 @@
 import json
 from dataclasses import dataclass
 from enum import Enum
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional
 
 from querycat.src.open_api_definition_client.models.schema_category_wrapper import (
     SchemaCategoryWrapper,
@@ -95,11 +95,22 @@ class SchemaCategory:
     def get_object(self, id: int) -> SchemaObject:
         return [x for x in self.objects if x.id == id][0]
 
-    def get_object_by_key(self, key: int) -> SchemaObject:
-        return [x for x in self.objects if x.key.value == key][0]
+    def get_object_by_key(self, key: int) -> Optional[SchemaObject]:
+        return next((x for x in self.objects if x.key.value == key), None)
 
-    def get_morphism(self, morphism: str) -> SchemaMorphism:
-        return [x for x in self.morphisms if x.signature.ids[0] == int(morphism)][0]
+    def get_morphism(self, morphism: str) -> Optional[SchemaMorphism]:
+        return next(
+            (
+                x
+                for x in self.morphisms
+                if x.signature.ids[0] == morphism
+                or (
+                    isinstance(x.signature.ids[0], int)
+                    and x.signature.ids[0] == int(morphism)
+                )
+            ),
+            None,
+        )
 
     @staticmethod
     def from_category_view(schema_category: SchemaCategoryWrapper) -> "SchemaCategory":

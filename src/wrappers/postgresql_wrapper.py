@@ -53,6 +53,7 @@ class PostgresqlWrapper(Wrapper):
         return f"FROM {tables}"
 
     def build_access_path(self) -> ComplexProperty:
+        # TODO: refactor this to have a separate PathBuilder object (not in the wrapper)
         # TODO: more complex access paths, joins
         subpaths = [
             SimpleProperty(
