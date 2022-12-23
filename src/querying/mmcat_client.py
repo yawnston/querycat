@@ -17,6 +17,7 @@ from querycat.src.open_api_definition_client.api.schema_category_controller.upda
     sync_detailed as update_category_wrapper,
 )
 from querycat.src.open_api_definition_client.client import Client
+from querycat.src.open_api_definition_client.models.mapping_init import MappingInit
 from querycat.src.open_api_definition_client.models.mapping_view import MappingView
 from querycat.src.open_api_definition_client.models.new_job_view import NewJobView
 from querycat.src.open_api_definition_client.models.position import Position
@@ -94,10 +95,7 @@ class MMCat:
         schema_category = SchemaCategory.from_category_view(category_api)
         return schema_category
 
-    def copy_schema_category(self) -> int:
-        schema_response = get_schema_category(client=self.client, id=self.schema_id)
-        schema_response_dict = json.loads(schema_response.content)
-
+    def create_schema_category(self) -> int:
         new_schema_response = create_new_schema(
             client=self.client,
             json_body=SchemaCategoryInit(
@@ -106,6 +104,32 @@ class MMCat:
         )
         new_schema_response_dict = json.loads(new_schema_response.content)
         new_schema_id = new_schema_response_dict["id"]
+        return new_schema_id
+
+    def put_schema_category_content(self, id: int, json_body_str: str):
+        class TempCategoryContent:
+            def __init__(self, json_body_dict):
+                self.json_body_dict = json_body_dict
+
+            def to_dict(self):
+                return self.json_body_dict
+
+        json_body_dict = json.loads(json_body_str)
+        # Workaround to use the deserialized object
+        json_body = TempCategoryContent(json_body_dict)
+        put_response = update_category_wrapper(
+            client=self.client,
+            id=id,
+            json_body=json_body,
+        )
+
+        if put_response.status_code != 200:
+            raise Exception("Response from mmcat was not 200: ", put_response)
+
+    def copy_schema_category(self) -> int:
+        schema_response = get_schema_category(client=self.client, id=self.schema_id)
+        schema_response_dict = json.loads(schema_response.content)
+        new_schema_id = self.create_schema_category()
 
         update_response = update_category_wrapper(
             client=self.client,
@@ -172,8 +196,8 @@ class MMCat:
         morphism = InstanceMorphismView.from_dict(morphism_response_json)
         return morphism
 
-    def create_mapping(self, mapping_json: str) -> int:
-        response = create_new_mapping(client=self.client, json_body=mapping_json)
+    def create_mapping(self, mapping: MappingInit) -> int:
+        response = create_new_mapping(client=self.client, json_body=mapping)
         if response.status_code != 200:
             raise Exception("Mapping creation failed: ", response)
         response_json = json.loads(response.content)

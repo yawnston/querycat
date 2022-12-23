@@ -81,25 +81,25 @@ class InstanceCategory:
     """
 
     def __init__(self, mmcat: MMCat, schema_category: SchemaCategory):
-        self._objects: List[InstanceObject] = []
-        self._morphisms: List[InstanceMorphism] = []
+        self._objects: Dict[int, InstanceObject] = {}
+        self._morphisms: Dict[Union[int, str], InstanceMorphism] = {}
         self._mmcat = mmcat
         self.schema_category = schema_category
 
     def get_object(self, key: int) -> InstanceObject:
-        found = next((x for x in self._objects if x.key == key), None)
+        found = self._objects.get(key, None)
         if not found:
             found = InstanceObject.from_view(self._mmcat.get_instance_object(key))
-            self._objects.append(found)
+            self._objects[key] = found
 
         return found
 
     def get_morphism(self, signature: int) -> InstanceMorphism:
-        found = next((x for x in self._morphisms if x.signature == signature), None)
+        found = self._morphisms.get(signature, None)
         if not found:
             found = InstanceMorphism.from_view(
                 signature=signature, view=self._mmcat.get_instance_morphism(signature)
             )
-            self._morphisms.append(found)
+            self._morphisms[signature] = found
 
         return found

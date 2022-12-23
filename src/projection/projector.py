@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import List, Tuple
 from uuid import uuid4
 from querycat.src.parsing.model import Triple
@@ -119,12 +120,10 @@ class QueryProjector:
 
         for new_schema_obj in result_schema.objects:
             instance_obj = where_instance.get_object(key=new_schema_obj.key.value)
-            result_instance._objects.append(
-                InstanceObject(
-                    key=new_schema_obj.key,
-                    columns=instance_obj.columns,
-                    rows=instance_obj.rows,
-                )
+            result_instance._objects[new_schema_obj.key.value] = InstanceObject(
+                key=new_schema_obj.key,
+                columns=instance_obj.columns,
+                rows=instance_obj.rows,
             )
 
         for new_schema_morphism in result_schema.morphisms:
@@ -141,17 +140,21 @@ class QueryProjector:
             while len(instance_path) > 1:
                 b = instance_path.pop()
                 a = instance_path.pop()
+                start_time = datetime.now()
                 contraction = self._contract_morphisms(a, b)
+                end_time = datetime.now()
+                print(
+                    f"Morphism contraction time elapsed: {(end_time - start_time).total_seconds()} seconds."
+                )
                 instance_path.append(contraction)
 
             final_morphism = instance_path[0]
-            result_instance._morphisms.append(
-                InstanceMorphism(
-                    signature=new_schema_morphism.signature.ids[0],
-                    mappings=final_morphism.mappings,
-                )
+            signature = new_schema_morphism.signature.ids[0]
+            result_instance._morphisms[signature] = InstanceMorphism(
+                signature=signature,
+                mappings=final_morphism.mappings,
             )
-        
+
         return result_instance
 
     def _contract_morphisms(

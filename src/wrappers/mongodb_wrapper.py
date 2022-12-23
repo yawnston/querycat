@@ -37,7 +37,7 @@ class MongodbWrapper(Wrapper):
                 base_collection = kind_name
             else:
                 raise Exception(
-                    "Joining collections in MongoDB is not yet implemented!"
+                    "Joining collections in MongoDB is not yet implemented since MM-evocat does not support it!"
                 )
 
         if base_collection is None:

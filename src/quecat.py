@@ -5,7 +5,7 @@ from querycat.src.querying.instance_model import InstanceCategory
 from querycat.src.querying.mmcat_client import MMCat
 
 
-def execute_query(query: str, schema_id: int) -> InstanceCategory:
+def execute_query(query_string: str, schema_id: int) -> InstanceCategory:
     query = QueryParser().parse(query_string)
     mmcat = MMCat(schema_id=schema_id)
     mappings = mmcat.get_mappings()
@@ -20,8 +20,8 @@ def execute_query(query: str, schema_id: int) -> InstanceCategory:
     # Create new schema category for WHERE clause and set it as active
     # TODO: do we copy the category earlier? because the mappings are set in variables
     # We have to be careful about using the correct object IDs (they change, object keys don't)
-    internal_category_id = 15
-    # internal_category_id = mmcat.copy_schema_category()
+    # internal_category_id = 15
+    internal_category_id = mmcat.copy_schema_category()
     mmcat_internal = MMCat(schema_id=internal_category_id)
     engine.mmcat = mmcat_internal
 
@@ -51,5 +51,5 @@ if __name__ == "__main__":
         }
     """
 
-    result = execute_query(query=query_string, schema_id=4)
+    result = execute_query(query_string=query_string, schema_id=4)
     ...

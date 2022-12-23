@@ -46,7 +46,7 @@ class PostgresqlWrapper(Wrapper):
             if tables is None:
                 tables = kind_name
             else:
-                raise Exception("Joining tables is not yet implemented!")
+                raise Exception("Joining tables is not yet implemented since MM-evocat does not support it!")
 
         if tables is None:
             raise PostgresqlWrapperError("No tables are selected in FROM clause.")
