@@ -61,6 +61,9 @@ class MappingRow:
 class DomainRow:
     tuples: Dict[Signature, str]
 
+    def __hash__(self) -> int:
+        return hash(tuple(self.tuples))
+
     @staticmethod
     def from_view(view: DomainRowView) -> "DomainRow":
         values = view.super_id.tuples.additional_properties.items()

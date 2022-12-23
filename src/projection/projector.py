@@ -1,3 +1,4 @@
+from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Tuple
@@ -140,12 +141,7 @@ class QueryProjector:
             while len(instance_path) > 1:
                 b = instance_path.pop()
                 a = instance_path.pop()
-                start_time = datetime.now()
                 contraction = self._contract_morphisms(a, b)
-                end_time = datetime.now()
-                print(
-                    f"Morphism contraction time elapsed: {(end_time - start_time).total_seconds()} seconds."
-                )
                 instance_path.append(contraction)
 
             final_morphism = instance_path[0]
@@ -162,13 +158,17 @@ class QueryProjector:
     ) -> InstanceMorphism:
         """Given morphisms (x)-a->(y)-b->(z), create a morphism
         (x)-c->(z) via contraction.
+
+        It uses hashing to contract the morphism.
         """
         contraction_rows: List[MappingRow] = []
+        join_map = defaultdict(lambda: [])
+        for b_row in b.mappings:
+            join_map[b_row.domain_row].append(b_row.codomain_row)
+
         for a_row in a.mappings:
-            join_rows = [
-                x.codomain_row for x in b.mappings if x.domain_row == a_row.codomain_row
-            ]
-            for b_codomain_row in join_rows:
+            b_codomain_rows = join_map[a_row.codomain_row]
+            for b_codomain_row in b_codomain_rows:
                 contraction_rows.append(
                     MappingRow(domain_row=a_row.domain_row, codomain_row=b_codomain_row)
                 )
