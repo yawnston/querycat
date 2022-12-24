@@ -1,3 +1,4 @@
+from datetime import datetime
 from querycat.src.parsing.query_parser import QueryParser
 from querycat.src.projection.projector import QueryProjector
 from querycat.src.querying.engine import QueryEngine

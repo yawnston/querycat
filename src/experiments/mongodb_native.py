@@ -63,6 +63,8 @@ def run_experiment_mongodb():
     mongodb_end_time = datetime.now()
 
     quecat_start_time = datetime.now()
+    # Can we optimize the ?customerId by inlining it in the schema category?
+    # That would eliminate the need for instance morphism contraction.
     query = """
     SELECT {
         ?order id ?orderId ;

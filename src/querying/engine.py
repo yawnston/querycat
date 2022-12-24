@@ -221,7 +221,7 @@ class QueryEngine:
         raise InvalidQueryPlanError("Missing join point?")
 
     def select_best_plan(self, plans: List[QueryPlan]) -> QueryPlan:
-        # TODO: implement selection of the best plan
+        # TODO: implement selection of the best plan (out of scope of my thesis)
         return plans[0]
 
     def compile_statements(self, plan: QueryPlan) -> None:
