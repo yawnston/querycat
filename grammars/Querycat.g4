@@ -1,13 +1,16 @@
 grammar Querycat;
 
-query:
-	selectQuery EOF;
+query: selectQuery EOF;
 
-selectQuery: selectClause whereClause solutionModifier;
+selectQuery: selectClause fromClause? whereClause solutionModifier;
+
+subSelect: selectQuery;
 
 selectClause: 'SELECT' selectGraphPattern;
 
 selectGraphPattern: '{' selectTriples? '}';
+
+fromClause: 'FROM' SCHEMA_IDENTIFIER;
 
 whereClause: 'WHERE'? groupGraphPattern;
 
@@ -28,20 +31,29 @@ limitClause: 'LIMIT' INTEGER;
 offsetClause: 'OFFSET' INTEGER;
 
 groupGraphPattern:
-	'{' triplesBlock? (
+	'{' (subSelect | (triplesBlock? (
 		(graphPatternNotTriples | filter_) '.'? triplesBlock?
-	)* '}';
+	)*)) '}';
 
 triplesBlock: triplesSameSubject ( '.' triplesBlock?)?;
 
 graphPatternNotTriples:
 	optionalGraphPattern
-	| groupOrUnionGraphPattern;
+	| groupOrUnionGraphPattern
+	| inlineData;
 
 optionalGraphPattern: 'OPTIONAL' groupGraphPattern;
 
 groupOrUnionGraphPattern:
-	groupGraphPattern ('UNION' groupGraphPattern)*;
+	groupGraphPattern (('UNION' | 'MINUS') groupGraphPattern)*;
+
+inlineData: 'VALUES' dataBlock;
+
+dataBlock: var_ '{' dataBlockValue* '}';
+
+dataBlockValue: numericLiteral
+	| booleanLiteral
+	| string_;
 
 filter_: 'FILTER' constraint;
 
@@ -62,8 +74,17 @@ object_: graphNode;
 
 verb: schemaMorphismOrPath;
 
-// TODO: repeated paths
-schemaMorphismOrPath: schemaMorphism ( '/' schemaMorphism)*;
+schemaMorphismOrPath: pathAlternative;
+
+pathAlternative: pathSequence ( '|' pathSequence )*;
+
+pathSequence: pathWithMod ( '/' pathWithMod )*;
+
+pathWithMod: pathPrimary pathMod?;
+
+pathMod: '?' | '*' | '+';
+
+pathPrimary: schemaMorphism | ( '(' schemaMorphismOrPath ')' ) ;
 
 schemaMorphism: primaryMorphism | dualMorphism;
 
@@ -118,7 +139,6 @@ relationalExpression:
 
 expressionPart: primaryExpression;
 
-// Deleted iriRef from here, I don't think it's needed?
 primaryExpression:
 	brackettedExpression
 	| numericLiteral
@@ -149,14 +169,15 @@ booleanLiteral: 'true' | 'false';
 
 string_:
 	STRING_LITERAL1
-	| STRING_LITERAL2
-	/* | STRING_LITERAL_LONG('0'..'9') | STRING_LITERAL_LONG('0'..'9')*/;
+	| STRING_LITERAL2;
 
 blankNode: BLANK_NODE_LABEL | ANON;
 
 // LEXER RULES
 
 SCHEMA_MORPHISM: (PN_CHARS)+;
+
+SCHEMA_IDENTIFIER: (PN_CHARS)+;
 
 BLANK_NODE_LABEL: '_:' PN_LOCAL;
 
@@ -188,16 +209,24 @@ DOUBLE_NEGATIVE: '-' DOUBLE;
 EXPONENT: ('e' | 'E') ('+' | '-')? DIGIT+;
 
 STRING_LITERAL1:
-	'\'' (~('\u0027' | '\u005C' | '\u000A' | '\u000D') | ECHAR)* '\'';
+	'\'' (
+		~('\u0027' | '\u005C' | '\u000A' | '\u000D') | ECHAR
+	)* '\'';
 
 STRING_LITERAL2:
-	'"' (~('\u0022' | '\u005C' | '\u000A' | '\u000D') | ECHAR)* '"';
+	'"' (
+		~('\u0022' | '\u005C' | '\u000A' | '\u000D') | ECHAR
+	)* '"';
 
 STRING_LITERAL_LONG1:
-	'\'\'\'' (( '\'' | '\'\'')? (~('\'' | '\\') | ECHAR))* '\'\'\'';
+	'\'\'\'' (
+		( '\'' | '\'\'')? (~('\'' | '\\') | ECHAR)
+	)* '\'\'\'';
 
 STRING_LITERAL_LONG2:
-	'"""' (( '"' | '""')? ( ~('\'' | '\\') | ECHAR))* '"""';
+	'"""' (
+		( '"' | '""')? ( ~('\'' | '\\') | ECHAR)
+	)* '"""';
 
 ECHAR: '\\' ('t' | 'b' | 'n' | 'r' | 'f' | '"' | '\'');
 
@@ -218,9 +247,7 @@ VARNAME: (PN_CHARS_U | DIGIT) (
 fragment PN_CHARS:
 	PN_CHARS_U
 	| '-'
-	| DIGIT
-	/*| '\u00B7' | '\u0300'..'\u036F' | '\u203F'..'\u2040'
-	 */;
+	| DIGIT;
 
 PN_PREFIX: PN_CHARS_BASE ((PN_CHARS | '.')* PN_CHARS)?;
 
