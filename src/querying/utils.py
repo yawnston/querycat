@@ -85,7 +85,6 @@ def find_path_in_schema(
     find a path between them in the schema category, and return
     the list of schema morphisms along this path.
     """
-    # TODO: reverse morphism traversals
     source = schema_category.get_object_by_key(source_key)
     dest = schema_category.get_object_by_key(dest_key)
 
@@ -109,7 +108,9 @@ def find_path_in_schema(
 
 
 def calculate_min_max_from_path(path: List[SchemaMorphism]) -> Tuple[Min, Max]:
-    # TODO: reverse morphism traversals
+    # The morphism cardinality is correct for dual morphisms even
+    # though we don't explicitly handle them, as dual morphisms
+    # are included explicitly by MM-evocat.
     min = Min.ZERO if Min.ZERO in [x.min for x in path] else Min.ONE
     max = Max.ONE if Max.ONE in [x.max for x in path] else Max.STAR
 
