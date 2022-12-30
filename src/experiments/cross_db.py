@@ -1,7 +1,10 @@
 from datetime import datetime
 from querycat.src.experiments.mongodb_native import seed_database_mongodb
 from querycat.src.experiments.postgresql_native import seed_database_postgresql
-from querycat.src.experiments.settings import EXPERIMENTS_EVOCAT_BASE_URL, EXPERIMENTS_POSTGRESQL_TABLE_NAME
+from querycat.src.experiments.settings import (
+    EXPERIMENTS_EVOCAT_BASE_URL,
+    EXPERIMENTS_POSTGRESQL_TABLE_NAME,
+)
 from querycat.src.experiments.setup import setup_mmcat
 
 from querycat.src.quecat import execute_query

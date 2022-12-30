@@ -29,6 +29,7 @@ from querycat.src.querying.utils import (
 class QueryProjector:
     """Class handling all things related to the projection phase of MMQL query
     execution, as described in the master's thesis algorithm proposal."""
+
     def project(
         self, plan: QueryPlan, where_instance: InstanceCategory
     ) -> Tuple[SchemaCategory, InstanceCategory]:

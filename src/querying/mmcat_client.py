@@ -76,6 +76,7 @@ class MMCat:
     You can re-generate the client yourself using `make openapi-generate`
     from the Makefile provided in this repository.
     """
+
     def __init__(self, schema_id: int, base_url: str) -> None:
         self.client = Client(base_url=base_url)
         self.schema_id = schema_id

@@ -4,7 +4,9 @@ EXPERIMENTS_MONGODB_CONNECTION_STRING = "mongodb://mmcat_user:mmcat_password@loc
 
 EXPERIMENTS_MONGODB_COLLECTION_NAME = "experiments_orders"
 
-EXPERIMENTS_POSTGRESQL_CONNECTION_STRING = "postgresql://mmcat_user:mmcat_password@localhost:5445/mmcat_server_data"
+EXPERIMENTS_POSTGRESQL_CONNECTION_STRING = (
+    "postgresql://mmcat_user:mmcat_password@localhost:5445/mmcat_server_data"
+)
 
 EXPERIMENTS_POSTGRESQL_TABLE_NAME = "experiments_customers"
 
