@@ -3,20 +3,27 @@ from querycat.src.projection.projector import QueryProjector
 from querycat.src.querying.engine import QueryEngine
 from querycat.src.querying.instance_model import InstanceCategory
 from querycat.src.querying.mmcat_client import MMCat
+from querycat.src.querying.preprocessor import QueryPreprocessor
 
 
 def execute_query(
     query_string: str, schema_id: int, mmcat_base_url: str
 ) -> InstanceCategory:
+    """Given a MMQL `query_string`, execute this query against the
+    schema category identified by `schema_id` stored in the
+    MM-evocat instance hosted at `mmcat_base_url`.
+
+    Returns an instance category with the results of the query.
+    """
     query = QueryParser().parse(query_string)
     mmcat = MMCat(schema_id=schema_id, base_url=mmcat_base_url)
     mappings = mmcat.get_mappings()
     schema_category = mmcat.get_schema_category()
 
+    preprocessed_query = QueryPreprocessor().preprocess_query(query)
     engine = QueryEngine(
         schema_category=schema_category, mappings=mappings, mmcat=mmcat
     )
-    preprocessed_query = engine.preprocess_query(query)
     query_plans = engine.create_plans(preprocessed_query)
 
     # Create new schema category for WHERE clause and set it as active
@@ -46,10 +53,11 @@ if __name__ == "__main__":
                 customerSurname ?customerSurname .
         }
         WHERE {
-            ?order 9 ?customer ;
-                10 ?orderId .
-            ?customer 2 ?customerName ;
+            ?customer -9 ?order ;
+                2 ?customerName ;
                 3 ?customerSurname .
+
+            ?order 10 ?orderId .
         }
     """
 

@@ -13,16 +13,19 @@ from querycat.src.parsing.model import (
 
 
 class QueryVisitor(QuerycatVisitor):
+    """Visitor class whose job is to traverse the AST parsed from each MMQL query,
+    and construct the internal query representation which is subsequently processed
+    by the rest of the algorithm.
+    """
+
     def aggregateResult(self, aggregate, nextResult):
-        # TODO: how about aggregating results?
+        # Maybe it would be more convenient to aggregate the results into a tuple or list?
         return nextResult if nextResult is not None else aggregate
 
     def visitSelectQuery(self, ctx: QuerycatParser.SelectQueryContext):
         select_clause = ctx.selectClause().accept(self)
         where_clause = ctx.whereClause().accept(self)
-        variables = (
-            select_clause.variables
-        )  # TODO: valiadte that variables are the same in SELECT and WHERE
+        variables = select_clause.variables
         return Query(select=select_clause, where=where_clause, variables=variables)
 
     def visitSelectClause(self, ctx: QuerycatParser.SelectClauseContext):
@@ -43,9 +46,6 @@ class QueryVisitor(QuerycatVisitor):
         )
 
     def visitGroupGraphPattern(self, ctx: QuerycatParser.GroupGraphPatternContext):
-        # TODO: nested graph patterns
-        # TODO: filters, optional, union etc
-        # TODO: what if there is only one block here?
         triples_lists = [self.visit(x) for x in ctx.triplesBlock()]
         filters = [self.visit(x) for x in ctx.filter_()]
         triples = [triple for list in triples_lists for triple in list]
@@ -64,7 +64,8 @@ class QueryVisitor(QuerycatVisitor):
         return same_subject_triples + more_triples
 
     def visitTriplesBlock(self, ctx: QuerycatParser.TriplesBlockContext):
-        # For now duplicated with select triples
+        # Almost identical to select triples, but this is necessary as the grammar
+        # definition for these constructs is slightly different.
         same_subject_triples: List[Triple] = ctx.triplesSameSubject().accept(self)
         more_triples_node = ctx.triplesBlock()
         if more_triples_node is not None:
@@ -103,7 +104,7 @@ class QueryVisitor(QuerycatVisitor):
     def visitSchemaMorphismOrPath(
         self, ctx: QuerycatParser.SchemaMorphismOrPathContext
     ):
-        # TODO: compound morphisms
+        # Should we do the compound morphism parsing here?
         return ctx.getText()
 
     def visitObjectList(self, ctx: QuerycatParser.ObjectListContext):
@@ -119,10 +120,6 @@ class QueryVisitor(QuerycatVisitor):
         variable_name_node = ctx.VAR1() or ctx.VAR2()
         variable_name = variable_name_node.symbol.text[1:]
         return Variable(name=variable_name)
-
-    # def visitGraphTerm(self, ctx: QuerycatParser.GraphTermContext):
-    #     # TODO: blank nodes, numbers, bools, strings
-    #     return ctx.getText()
 
     def visitString_(self, ctx: QuerycatParser.String_Context):
         return ctx.getText().strip("\"'")

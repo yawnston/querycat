@@ -27,6 +27,9 @@ def get_base_from_dual(morphism: str) -> str:
 def get_variable_types_from_query(
     query: Query, schema_category: SchemaCategory
 ) -> VariableTypes:
+    """Get the set of variables from the query, along with
+    the corresponding schema object for each variable.
+    """
     return get_variable_types(
         triples=query.where.triples, schema_category=schema_category
     )
@@ -35,6 +38,9 @@ def get_variable_types_from_query(
 def get_variable_types_from_part(
     part: QueryPart, schema_category: SchemaCategory
 ) -> VariableTypes:
+    """Get the set of variables from the query part, along with
+    the corresponding schema object for each variable.
+    """
     return get_variable_types(
         triples=[triple for triple, _ in part.triples_mapping],
         schema_category=schema_category,
@@ -45,6 +51,9 @@ def get_variable_types(
     triples: List[Triple],
     schema_category: SchemaCategory,
 ) -> VariableTypes:
+    """Get the set of variables from the provided set of triples,
+    along with the corresponding schema object for each variable.
+    """
     variable_types: VariableTypes = {}
     for triple in triples:
         morphism = schema_category.get_morphism(triple.morphism)
@@ -72,6 +81,10 @@ def is_object_terminal(object: SchemaObject) -> bool:
 def find_path_in_schema(
     source_key: int, dest_key: int, schema_category: SchemaCategory
 ) -> List[SchemaMorphism]:
+    """Given the key of a source and destination schema object,
+    find a path between them in the schema category, and return
+    the list of schema morphisms along this path.
+    """
     # TODO: reverse morphism traversals
     source = schema_category.get_object_by_key(source_key)
     dest = schema_category.get_object_by_key(dest_key)

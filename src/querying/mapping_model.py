@@ -139,7 +139,8 @@ class SimpleProperty(AccessPath):
 
     def get_property_name(self, morphism: str, accumulator: str) -> Optional[str]:
         if isinstance(self.name, DynamicName):
-            return None  # TODO: dynamic names
+            # Dynamic names are not yet supported
+            return None
         new_accumulator = accumulator + f".{self.name.value}"
         if int(morphism) in self.value.signature.ids:
             return new_accumulator
@@ -177,9 +178,7 @@ class ComplexProperty(AccessPath):
     subpaths: List[AccessPath]
 
     def get_property_name(self, morphism: str, accumulator: str) -> Optional[str]:
-        new_accumulator = (accumulator + f".{self.name.value}").strip(
-            "."
-        )  # TODO: dynamic names
+        new_accumulator = (accumulator + f".{self.name.value}").strip(".")
         if int(morphism) in self.signature.ids:
             return new_accumulator
 

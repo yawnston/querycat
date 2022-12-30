@@ -27,9 +27,15 @@ from querycat.src.querying.utils import (
 
 @dataclass
 class QueryProjector:
+    """Class handling all things related to the projection phase of MMQL query
+    execution, as described in the master's thesis algorithm proposal."""
     def project(
         self, plan: QueryPlan, where_instance: InstanceCategory
     ) -> Tuple[SchemaCategory, InstanceCategory]:
+        """Given a query plan `plan` and the instance category `where_instance`
+        containing the results of the `WHERE` clause, perform projection
+        to the final MMQL query result instance category.
+        """
         self._run_deferred_statements(plan=plan, where_instance=where_instance)
         result_schema = self._create_schema_category(
             plan=plan, where_instance=where_instance
@@ -45,9 +51,8 @@ class QueryProjector:
     ) -> SchemaCategory:
         result_schema = SchemaCategory(objects=[], morphisms=[])
         for triple in plan.query.select.triples:
-            # TODO: implement compound paths in select
             if isinstance(triple.object, str):
-                # TODO: implement constant properties
+                # The implementation does not support constants in the SELECT clause yet.
                 pass
             else:
                 self._create_schema_entities(
@@ -63,6 +68,9 @@ class QueryProjector:
         where_instance: InstanceCategory,
         triple: Triple,
     ):
+        """Create the schema objects and schema morphism for this triple
+        if any of them are not yet defined in the result schema category.
+        """
         variable_types = get_variable_types_from_query(
             plan.query, where_instance.schema_category
         )
@@ -104,7 +112,12 @@ class QueryProjector:
     def _run_deferred_statements(
         self, plan: QueryPlan, where_instance: InstanceCategory
     ):
-        # TODO: implement deferred statements
+        """Run all deferred statements which could not be executed natively,
+        as they are either not supported by the underlying database, or they
+        span multiple query parts, which means they could not be executed
+        in the context of a single database.
+        """
+        # The implementation does not support deferred statements yet.
         pass
 
     def _project_result(
@@ -159,7 +172,11 @@ class QueryProjector:
         """Given morphisms (x)-a->(y)-b->(z), create a morphism
         (x)-c->(z) via contraction.
 
-        It uses hashing to contract the morphism.
+        It uses hashing to contract the morphism more efficiently, but
+        this function is still a major performance bottleneck with
+        large data. We would need to drastically rework the interface
+        of MM-evocat and the representation of an instance category
+        to improve the performance further.
         """
         contraction_rows: List[MappingRow] = []
         join_map = defaultdict(lambda: [])

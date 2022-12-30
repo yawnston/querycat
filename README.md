@@ -34,6 +34,8 @@ The interface for MM-quecat is very simple - there is a single function `execute
 
 This function returns a single value - an instance category (again, please refer to my thesis for an explanation of what this is). The final idea is to return the chosen representation of the result like JSON or RDF, but unfortunately MM-evocat does not support the conversion of an instance category into these formats yet, which is why we can only return the instance category at this moment.
 
+You can either use MM-quecat as a library as described above, or you can edit the main function in `src/querycat.py` according to your wishes and run that (but make sure to set your `PYTHONPATH` environment variable to the workspace root, otherwise the imports won't work).
+
 ## Experiments
 
 If you have a MM-evocat instance correctly configured, you can also run the experiments described in my master's thesis (Chapter 8). Each of the three experiments is in its own Python source file in the `experiments` folder: `postgresql_native.py`, `mongodb_native.py` and `cross_db.py`. Running any of these files (again, provided you have a running MM-evocat instance) will run the corresponding experiment, printing out timing information at the end.

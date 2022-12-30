@@ -18,6 +18,13 @@ class Projection(Operation):
 
 
 class Wrapper:
+    """Generic interface for all database wrappers, each of which inherits
+    from this class.
+
+    All code should depend on this abstraction, rather than any concrete
+    database wrapper.
+    """
+
     _projections: List[Projection]
 
     def __init__(self):

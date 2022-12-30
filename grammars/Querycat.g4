@@ -59,7 +59,6 @@ filter_: 'FILTER' constraint;
 
 constraint: brackettedExpression;
 
-// TODO: have separate rules for morphisms in triples in select vs where?
 selectTriples: triplesSameSubject ( '.' selectTriples?)?;
 
 triplesSameSubject: varOrTerm propertyListNotEmpty;

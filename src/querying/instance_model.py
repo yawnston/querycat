@@ -70,8 +70,10 @@ class DomainRow:
 
         return DomainRow(
             tuples={
-                # TODO: the .0 replace is a hack to make MongoDB and PostgreSQL ids compatible
-                # It could accidentally change some results somewhere unintentionally.
+                # The .0 replace is a hack to make MongoDB and PostgreSQL ids compatible
+                # It could accidentally change some results somewhere unintentionally,
+                # but this issue is only theoretical and I haven't yet encountered a scenario
+                # where this would actually be a problem.
                 Signature.from_base_str(signature): value.replace(".0", "")
                 for signature, value in values
             }
