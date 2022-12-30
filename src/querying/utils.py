@@ -21,6 +21,9 @@ def is_dual_morphism(morphism: str) -> bool:
 
 
 def get_base_from_dual(morphism: str) -> str:
+    """Given a dual morphism, return its dual, meaning
+    the actual base morphism without the minus.
+    """
     return morphism.strip("-").strip()
 
 

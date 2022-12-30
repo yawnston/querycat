@@ -11,8 +11,6 @@ from querycat.src.querying.schema_model import SchemaObject
 class QueryPlan:
     query: Query
     parts: List["QueryPart"]
-    # TODO: is the join plan actually needed when evocat is doing the joining?
-    # join_plan: "JoinPlan"
     deferred_statements: List[Statement]
 
 

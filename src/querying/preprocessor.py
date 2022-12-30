@@ -31,6 +31,10 @@ class QueryPreprocessor:
         )
 
     def _split_compound_morphisms(self, triples: List[Triple]) -> List[Triple]:
+        """For each compound morphism (A) -x/y-> (B), split it by inserting
+        intermediate internal variables in such a way that each triple contains
+        a base morphism only.
+        """
         transformed_triples = []
 
         for triple in triples:
@@ -60,6 +64,9 @@ class QueryPreprocessor:
         return transformed_triples
 
     def _reverse_base_morphisms(self, triples: List[Triple]) -> List[Triple]:
+        """For each triple with a base dual morphism, reverse its direction
+        so that we have a non-dual morphism.
+        """
         transformed_triples = []
 
         for triple in triples:

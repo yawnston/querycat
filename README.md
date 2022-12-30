@@ -58,4 +58,4 @@ The repo also contains a couple of extra folders, namely `grammars/` which conta
 
 ## Development
 
-Even though Python is dynamically typed, prefer to use static typing where possible. This project also follows [PEP8](https://peps.python.org/pep-0008/) styling where possible. Formatting/linting is done with [Black](https://github.com/psf/black), which is automatically run in GitHub actions for every commit, failing if any issues are found.
+Even though Python is dynamically typed, prefer to use static typing where possible. This project also follows [PEP8](https://peps.python.org/pep-0008/) styling where possible. Formatting/linting is done with [Black](https://github.com/psf/black), which is automatically run in GitHub Actions for every commit, failing if any issues are found.
