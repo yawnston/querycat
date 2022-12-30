@@ -8,6 +8,8 @@ EXPERIMENTS_POSTGRESQL_CONNECTION_STRING = "postgresql://mmcat_user:mmcat_passwo
 
 EXPERIMENTS_POSTGRESQL_TABLE_NAME = "experiments_customers"
 
+EXPERIMENTS_EVOCAT_BASE_URL = "http://localhost:27500"
+
 # Number of order objects in MongoDB to use in experiments
 EXPERIMENTS_MONGODB_NUM_ORDERS = 6000
 

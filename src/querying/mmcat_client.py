@@ -66,8 +66,18 @@ import httpx
 
 
 class MMCat:
-    def __init__(self, schema_id: int) -> None:
-        self.client = Client(base_url="http://localhost:27500")
+    """Client for MM-evocat (and other MM-cat related services in the future).
+    Configure this class with the ID of the schema category you wish to operate on,
+    as well as the base URL of the MM-evocat instance.
+
+    All methods of this class correspond to API calls on MM-evocat.
+    This class internally uses client code which was automatically generated
+    from the OpenAPI specification for MM-evocat which I generated.
+    You can re-generate the client yourself using `make openapi-generate`
+    from the Makefile provided in this repository.
+    """
+    def __init__(self, schema_id: int, base_url: str) -> None:
+        self.client = Client(base_url=base_url)
         self.schema_id = schema_id
 
         # Instance category manipulation doesn't work without using cookies

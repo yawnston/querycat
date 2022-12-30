@@ -1,5 +1,6 @@
 from datetime import datetime
 from querycat.src.experiments.settings import (
+    EXPERIMENTS_EVOCAT_BASE_URL,
     EXPERIMENTS_MONGODB_COLLECTION_NAME,
     EXPERIMENTS_MONGODB_CONNECTION_STRING,
     EXPERIMENTS_MONGODB_NUM_ORDERS,
@@ -51,7 +52,7 @@ def seed_database_mongodb():
 
 def run_experiment_mongodb():
     collection = seed_database_mongodb()
-    schema_id = setup_mmcat()
+    schema_id = setup_mmcat(mmcat_base_url=EXPERIMENTS_EVOCAT_BASE_URL)
 
     mongodb_start_time = datetime.now()
     # Collect all results by converting them to a list

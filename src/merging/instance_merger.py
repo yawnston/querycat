@@ -43,5 +43,7 @@ class InstanceMerger:
 
 
 if __name__ == "__main__":
-    merger = InstanceMerger(mmcat=MMCat(schema_id=11))
+    merger = InstanceMerger(
+        mmcat=MMCat(schema_id=11, base_url="http://localhost:27500")
+    )
     merger.merge_test(None)

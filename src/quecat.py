@@ -1,4 +1,3 @@
-from datetime import datetime
 from querycat.src.parsing.query_parser import QueryParser
 from querycat.src.projection.projector import QueryProjector
 from querycat.src.querying.engine import QueryEngine
@@ -6,9 +5,11 @@ from querycat.src.querying.instance_model import InstanceCategory
 from querycat.src.querying.mmcat_client import MMCat
 
 
-def execute_query(query_string: str, schema_id: int) -> InstanceCategory:
+def execute_query(
+    query_string: str, schema_id: int, mmcat_base_url: str
+) -> InstanceCategory:
     query = QueryParser().parse(query_string)
-    mmcat = MMCat(schema_id=schema_id)
+    mmcat = MMCat(schema_id=schema_id, base_url=mmcat_base_url)
     mappings = mmcat.get_mappings()
     schema_category = mmcat.get_schema_category()
 
@@ -23,7 +24,7 @@ def execute_query(query_string: str, schema_id: int) -> InstanceCategory:
     # We have to be careful about using the correct object IDs (they change, object keys don't)
     # internal_category_id = 15
     internal_category_id = mmcat.copy_schema_category()
-    mmcat_internal = MMCat(schema_id=internal_category_id)
+    mmcat_internal = MMCat(schema_id=internal_category_id, base_url=mmcat_base_url)
     engine.mmcat = mmcat_internal
 
     best_plan = engine.select_best_plan(query_plans)
@@ -52,5 +53,7 @@ if __name__ == "__main__":
         }
     """
 
-    result = execute_query(query_string=query_string, schema_id=4)
+    result = execute_query(
+        query_string=query_string, schema_id=4, mmcat_base_url="http://localhost:27500"
+    )
     ...

@@ -11,11 +11,11 @@ from querycat.src.open_api_definition_client.models.mapping_init import MappingI
 from querycat.src.querying.mmcat_client import MMCat
 
 
-def setup_mmcat() -> int:
+def setup_mmcat(mmcat_base_url: str) -> int:
     """Set up the experiments schema and mapping in MM-cat.
 
     Returns the id of the created schema category."""
-    mmcat = MMCat(schema_id=None)
+    mmcat = MMCat(schema_id=None, base_url=mmcat_base_url)
     schema_id = mmcat.create_schema_category()
     mmcat.schema_id = schema_id
     mmcat.put_schema_category_content(schema_id, EXPERIMENTS_SCHEMA_CATEGORY_JSON)

@@ -1,7 +1,7 @@
 from datetime import datetime
 from querycat.src.experiments.mongodb_native import seed_database_mongodb
 from querycat.src.experiments.postgresql_native import seed_database_postgresql
-from querycat.src.experiments.settings import EXPERIMENTS_POSTGRESQL_TABLE_NAME
+from querycat.src.experiments.settings import EXPERIMENTS_EVOCAT_BASE_URL, EXPERIMENTS_POSTGRESQL_TABLE_NAME
 from querycat.src.experiments.setup import setup_mmcat
 
 from querycat.src.quecat import execute_query
@@ -10,7 +10,7 @@ from querycat.src.quecat import execute_query
 def run_experiment_cross_db():
     postgresql_connection = seed_database_postgresql()
     mongodb_collection = seed_database_mongodb()
-    schema_id = setup_mmcat()
+    schema_id = setup_mmcat(mmcat_base_url=EXPERIMENTS_EVOCAT_BASE_URL)
 
     db_start_time = datetime.now()
     # Collect all results by converting them to lists

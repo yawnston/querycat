@@ -1,5 +1,6 @@
 from datetime import datetime
 from querycat.src.experiments.settings import (
+    EXPERIMENTS_EVOCAT_BASE_URL,
     EXPERIMENTS_POSTGRESQL_CONNECTION_STRING,
     EXPERIMENTS_POSTGRESQL_NUM_CUSTOMERS,
     EXPERIMENTS_POSTGRESQL_TABLE_NAME,
@@ -43,7 +44,7 @@ def seed_database_postgresql():
 
 def run_experiment_postgresql():
     postgresql_connection = seed_database_postgresql()
-    schema_id = setup_mmcat()
+    schema_id = setup_mmcat(mmcat_base_url=EXPERIMENTS_EVOCAT_BASE_URL)
 
     postgresql_start_time = datetime.now()
     cursor = postgresql_connection.cursor()
