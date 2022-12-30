@@ -55,3 +55,7 @@ The structure of the code is relatively simple, loosely following the strucutre 
 - Experiments from the thesis are located in `src/experiments/`
 
 The repo also contains a couple of extra folders, namely `grammars/` which contains the MMQL grammar in the file `Querycat.g4` and the original SPARQL grammar which was used as inspiration during its development, and `notes/` which contains my personal notes I was making during the writing of my thesis. Don't expect to find anything useful in the notes, it's just a convenient place where I could keep my notes safe and versioned.
+
+## Development
+
+Even though Python is dynamically typed, prefer to use static typing where possible. This project also follows [PEP8](https://peps.python.org/pep-0008/) styling where possible. Formatting/linting is done with [Black](https://github.com/psf/black), which is automatically run in GitHub actions for every commit, failing if any issues are found.
