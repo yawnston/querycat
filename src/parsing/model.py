@@ -40,13 +40,19 @@ class Filter:
 
 
 @dataclass
+class Values:
+    variable: "Variable"
+    allowed_values: List[str]
+
+
+@dataclass
 class Triple:
     subject: "Variable"
     morphism: str
     object: Union["Variable", str]
 
 
-Statement = Union[Triple, Filter]
+Statement = Union[Triple, Filter, Values]
 
 
 @dataclass

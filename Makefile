@@ -1,4 +1,4 @@
-.PHONY: antlr-generate openapi-generate
+.PHONY: antlr-generate openapi-generate format
 
 # Generate an up-to-date parset, lexer and visitor from the Querycat.g4 grammar
 antlr-generate:
@@ -7,3 +7,6 @@ antlr-generate:
 # Re-generate the MM-evocat client code from its OpenAPI specification in the case of any changes
 openapi-generate:
 	cd src/ && openapi-python-client generate --meta "none" --url http://localhost:27500/v3/api-docs
+
+format:
+	black src/

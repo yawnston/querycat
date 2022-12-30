@@ -22,6 +22,7 @@ class JoinPlan:
 @dataclass
 class QueryPart:
     triples_mapping: List[Tuple[Triple, "Kind"]]
+    statements: List[Statement]
     compiled: Optional["QueryPartCompiled"] = None
     ...
 

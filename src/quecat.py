@@ -3,6 +3,7 @@ from querycat.src.projection.projector import QueryProjector
 from querycat.src.querying.engine import QueryEngine
 from querycat.src.querying.instance_model import InstanceCategory
 from querycat.src.querying.mmcat_client import MMCat
+from querycat.src.querying.planner import QueryPlanner
 from querycat.src.querying.preprocessor import QueryPreprocessor
 
 
@@ -21,10 +22,8 @@ def execute_query(
     schema_category = mmcat.get_schema_category()
 
     preprocessed_query = QueryPreprocessor().preprocess_query(query)
-    engine = QueryEngine(
-        schema_category=schema_category, mappings=mappings, mmcat=mmcat
-    )
-    query_plans = engine.create_plans(preprocessed_query)
+    planner = QueryPlanner(schema_category=schema_category, mappings=mappings)
+    query_plans = planner.create_plans(preprocessed_query)
 
     # Create new schema category for WHERE clause and set it as active
     # TODO: do we copy the category earlier? because the mappings are set in variables
@@ -32,9 +31,9 @@ def execute_query(
     # internal_category_id = 15
     internal_category_id = mmcat.copy_schema_category()
     mmcat_internal = MMCat(schema_id=internal_category_id, base_url=mmcat_base_url)
-    engine.mmcat = mmcat_internal
+    engine = QueryEngine(schema_category=schema_category, mmcat=mmcat_internal)
 
-    best_plan = engine.select_best_plan(query_plans)
+    best_plan = planner.select_best_plan(query_plans)
     engine.compile_statements(best_plan)
     where_instance = engine.execute_plan(best_plan)
 
@@ -58,6 +57,8 @@ if __name__ == "__main__":
                 3 ?customerSurname .
 
             ?order 10 ?orderId .
+
+            FILTER(?customerName = "Alice")
         }
     """
 
