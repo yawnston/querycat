@@ -60,10 +60,13 @@ class MongodbWrapper(Wrapper):
         return pipeline
 
     def _build_projection(self) -> Dict:
-        project = {
-            projection.property_path[-1].name.value: 1
-            for projection in self._projections
-        }
+        projection_names = [
+            self._get_var_name(projection) for projection in self._projections
+        ]
+
+        # We support nested complex properties even for arrays, but MM-evocat
+        # does not support them yet, so their querying will not work.
+        project = {name: 1 for name in projection_names}
 
         return {"$project": project}
 
@@ -103,7 +106,10 @@ class MongodbWrapper(Wrapper):
         return {"$match": filters}
 
     def _build_var_name_map(self) -> VariableNameMap:
-        return {x.variable_id: [self._get_var_name(x)] for x in self._projections}
+        return {x.variable_id: self._get_var_name_path(x) for x in self._projections}
 
     def _get_var_name(self, projection: Projection) -> str:
-        return projection.property_path[-1].name.value
+        return ".".join(self._get_var_name_path(projection))
+
+    def _get_var_name_path(self, projection: Projection) -> List[str]:
+        return [x.name.value for x in projection.property_path]

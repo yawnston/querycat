@@ -204,6 +204,9 @@ class QueryPlanner:
             for filter in query.where.filters:
                 for triple, _ in part.triples_mapping:
                     if isinstance(filter.lhs, Variable) and filter.lhs == triple.object:
+                        # Whenever we implement deferred statements, we will need to
+                        # check whether a potential rhs variable/aggregation is in the same
+                        # query part.
                         part.statements.append(filter)
 
             for values in query.where.values:

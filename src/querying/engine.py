@@ -1,12 +1,14 @@
 from dataclasses import dataclass
+from typing import List
 from querycat.src.merging.instance_merger import InstanceMerger
 
 from querycat.src.parsing.model import Filter, Values, Variable
 from querycat.src.querying.instance_model import InstanceCategory
 from querycat.src.querying.mapping_builder import MappingBuilder
-from querycat.src.querying.mapping_model import SimpleProperty
+from querycat.src.querying.mapping_model import AccessPath
 from querycat.src.querying.mmcat_client import MMCat
 from querycat.src.querying.model import (
+    Kind,
     QueryPart,
     QueryPartCompiled,
     QueryPlan,
@@ -50,6 +52,9 @@ class QueryEngine:
     def _compile_query_part(
         self, part: QueryPart, where_schema_category: SchemaCategory
     ) -> None:
+        """Compile the native database query and corresponding mapping
+        for a single query part.
+        """
         variable_types = get_variable_types_from_part(part, self.schema_category)
         wrapper = Wrapper.create(mapping=part.triples_mapping[0][1].mapping)
         mapping_builder = MappingBuilder(
@@ -88,12 +93,9 @@ class QueryEngine:
                 raise Exception("Triples with string objects not yet implemented.")
             elif isinstance(object, Variable):
                 if is_object_terminal(variable_types[object.name]):
-                    property_path = [
-                        x
-                        for x in kind.mapping.access_path.subpaths
-                        if isinstance(x, SimpleProperty)
-                        and x.value.signature.ids[0] == int(morphism)
-                    ]
+                    property_path = self._get_property_path(
+                        morphism=morphism, kind=kind
+                    )
                     wrapper.add_projection(
                         property_path=property_path,
                         kind_id=get_kind_id(kind),
@@ -104,6 +106,21 @@ class QueryEngine:
                         property_path=property_path,
                         mapping=kind.mapping,
                     )
+
+    def _get_property_path(self, morphism: str, kind: Kind) -> List[AccessPath]:
+        """Find the path to `morphism` in `kind` and return the properties
+        along the way.
+        """
+        path = []
+        property_full_name = kind.mapping.get_property_name(morphism)
+        current_property = kind.mapping.access_path
+        for property_name in property_full_name.split("."):
+            current_property = [
+                x for x in current_property.subpaths if x.name.value == property_name
+            ][0]
+            path.append(current_property)
+
+        return path
 
     def _process_filters(
         self,

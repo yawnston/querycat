@@ -67,12 +67,7 @@ class MappingBuilder:
 
     def _build_access_path(self, variable_map: VariableNameMap) -> ComplexProperty:
         subpaths = [
-            SimpleProperty(
-                name=StaticName(value=var_name_path[0]),
-                value=SimpleValue(
-                    signature=self.variable_definitions[var_id][0][0].value.signature
-                ),
-            )
+            self._build_property_subpath(var_id, var_name_path)
             for var_id, var_name_path in variable_map.items()
         ]
         root = ComplexProperty(
@@ -81,3 +76,32 @@ class MappingBuilder:
             subpaths=subpaths,
         )
         return root
+
+    def _build_property_subpath(
+        self, var_id: VariableId, var_name_path: List[str]
+    ) -> AccessPath:
+        current_property = SimpleProperty(
+            name=StaticName(value=var_name_path[-1]),
+            value=SimpleValue(
+                signature=self.variable_definitions[var_id][0][-1].value.signature
+            ),
+        )
+        current_index = len(var_name_path) - 1
+
+        while current_index > 0:
+            current_index -= 1
+            current_source_property = self.variable_definitions[var_id][0][
+                current_index
+            ]
+            if isinstance(current_source_property, ComplexProperty):
+                current_signature = current_source_property.signature
+            else:
+                current_signature = current_source_property.value.signature
+
+            current_property = ComplexProperty(
+                name=StaticName(value=var_name_path[current_index]),
+                signature=current_signature,
+                subpaths=[current_property],
+            )
+
+        return current_property
