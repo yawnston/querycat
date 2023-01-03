@@ -19,10 +19,18 @@ from querycat.src.querying.utils import get_variable_types_from_query
 
 @dataclass
 class QueryPlanner:
+    """Query planner class which is responsible for the creation of query
+    plans for a given query"""
+
     schema_category: SchemaCategory
     mappings: List[Mapping]
 
     def create_plans(self, query: Query) -> List[QueryPlan]:
+        """Given an input query, generate all possible query plans.
+        In the case of no data redundancy, the result will always
+        contain only one query plan. In the case that redundancy is
+        present, there can be multiple plans.
+        """
         variable_types = get_variable_types_from_query(
             query=query, schema_category=self.schema_category
         )
@@ -43,17 +51,14 @@ class QueryPlanner:
         query_plans = []
         for assignment in assignments_product:
             try:
-                query_plan = self.split_query_parts(query, variable_types, assignment)
+                query_plan = self._split_query_parts(query, variable_types, assignment)
                 query_plans.append(query_plan)
             except InvalidQueryPlanError:
                 continue
 
-        # FIXME: this generates different variable names for the same join point in two query parts,
-        # is that a problem? and how about when one side already has it but one doesn't? do we take over
-        # the same variable name?
         return query_plans
 
-    def split_query_parts(
+    def _split_query_parts(
         self, query: Query, variable_types: VariableTypes, assignment: tuple
     ) -> QueryPlan:
         initial_query_part = QueryPart(
@@ -75,14 +80,18 @@ class QueryPlanner:
                 finished_query_parts.append(query_part)
                 continue
 
-            split_query_parts = self.split_single_query_part(variable_types, query_part)
+            split_query_parts = self._split_single_query_part(
+                variable_types, query_part
+            )
             query_part_queue.extend(split_query_parts)
 
         return QueryPlan(
             query=query, deferred_statements=[], parts=finished_query_parts
         )
 
-    def split_single_query_part(self, variable_types, query_part) -> List[QueryPart]:
+    def _split_single_query_part(
+        self, variable_types: VariableTypes, query_part: QueryPart
+    ) -> List[QueryPart]:
         # Match triples pattern () -A-> (I) -B-> () or () <-A- (I) -B-> ()
         for tripleA, kindA in query_part.triples_mapping:
             for tripleB, kindB in query_part.triples_mapping:
@@ -90,78 +99,99 @@ class QueryPlanner:
                     tripleA.object == tripleB.subject
                     or tripleA.subject == tripleB.subject
                 ):
-                    # TODO: databases without joins would need this changed
+                    # This condition needs to change in the cases of databases without joins,
+                    # but MM-evocat doesn't support joins yet anyway.
                     if kindA.mapping.database.id == kindB.mapping.database.id:
                         continue
 
-                    intersection_var = tripleB.subject
-                    intersection_object = variable_types[intersection_var.name]
-                    intersection_identifier = None
-                    for identifier in intersection_object.ids:
-                        if all(
-                            (
-                                all(
-                                    (
-                                        kindA.mapping.get_property_name(
-                                            str(base_morphism)
-                                        )
-                                        for base_morphism in signature.ids
-                                    )
-                                )
-                                for signature in identifier.signatures
-                            )
-                        ):
-                            intersection_identifier = identifier
-
-                            # Project identifier from both kinds and split query part
-                    if not intersection_identifier:
-                        raise InvalidQueryPlanError(tripleA, tripleB)
-
-                        # TODO: non-contiguous database parts (like mongo-postgre-mongo), with this they leave gaps in the query parts
-                    new_query_part = QueryPart(
-                        triples_mapping=[
-                            (triple, kind)
-                            for triple, kind in query_part.triples_mapping
-                            if kind.mapping.database.id == kindB.mapping.database.id
-                        ],
-                        statements=[],
+                    return self._split_join_point(
+                        variable_types, query_part, tripleA, kindA, tripleB, kindB
                     )
-                    query_part.triples_mapping = [
-                        x
-                        for x in query_part.triples_mapping
-                        if x not in new_query_part.triples_mapping
-                    ]
-
-                    for query_part_to_modify, select_kind in [
-                        (new_query_part, kindB),
-                        (query_part, kindA),
-                    ]:
-                        for signature in intersection_identifier.signatures:
-                            # TODO: compound signatures in identifiers
-                            morphism = signature.ids[0]
-                            if not any(
-                                (
-                                    triple
-                                    for triple, _ in query_part_to_modify.triples_mapping
-                                    if triple.subject.name == intersection_var.name
-                                    and triple.morphism == str(morphism)
-                                )
-                            ):
-                                query_part_to_modify.triples_mapping.append(
-                                    (
-                                        Triple(
-                                            subject=intersection_var,
-                                            morphism=str(morphism),
-                                            object=Variable(name=uuid4().hex),
-                                        ),
-                                        select_kind,
-                                    )
-                                )
-
-                    return [new_query_part, query_part]
         raise InvalidQueryPlanError("Missing join point")
 
+    def _split_join_point(
+        self,
+        variable_types: VariableTypes,
+        query_part: QueryPart,
+        tripleA: Triple,
+        kindA: Kind,
+        tripleB: Triple,
+        kindB: Kind,
+    ) -> List[QueryPart]:
+        intersection_var = tripleB.subject
+        intersection_object = variable_types[intersection_var.name]
+        intersection_identifier = None
+        for identifier in intersection_object.ids:
+            if all(
+                (
+                    all(
+                        (
+                            kindA.mapping.get_property_name(str(base_morphism))
+                            for base_morphism in signature.ids
+                        )
+                    )
+                    for signature in identifier.signatures
+                )
+            ):
+                intersection_identifier = identifier
+
+        # Project identifier from both kinds and split query part
+        if not intersection_identifier:
+            raise InvalidQueryPlanError(tripleA, tripleB)
+
+        # When MM-evocat supports joins and we can implement them,
+        # non-contiguous database parts (like mongo-postgre-mongo) could
+        # leave gaps in the query parts with this implementation.
+        new_query_part = QueryPart(
+            triples_mapping=[
+                (triple, kind)
+                for triple, kind in query_part.triples_mapping
+                if kind.mapping.database.id == kindB.mapping.database.id
+            ],
+            statements=[],
+        )
+        query_part.triples_mapping = [
+            x
+            for x in query_part.triples_mapping
+            if x not in new_query_part.triples_mapping
+        ]
+
+        for query_part_to_modify, select_kind in [
+            (new_query_part, kindB),
+            (query_part, kindA),
+        ]:
+            for signature in intersection_identifier.signatures:
+                # In the case that an identifier is a compound signature,
+                # this will not suffice.
+                morphism = signature.ids[0]
+                if not any(
+                    (
+                        triple
+                        for triple, _ in query_part_to_modify.triples_mapping
+                        if triple.subject.name == intersection_var.name
+                        and triple.morphism == str(morphism)
+                    )
+                ):
+                    query_part_to_modify.triples_mapping.append(
+                        (
+                            Triple(
+                                subject=intersection_var,
+                                morphism=str(morphism),
+                                # Note that the variable name will be different for both
+                                # query parts, but this is not a problem since the morphisms
+                                # dictate data placement when joining instance categories.
+                                object=Variable(name=uuid4().hex),
+                            ),
+                            select_kind,
+                        )
+                    )
+
+        return [new_query_part, query_part]
+
     def select_best_plan(self, plans: List[QueryPlan]) -> QueryPlan:
+        """Given a set of query plans, evaluate the cost of each plan
+        and return the best plan.
+        """
         # Selection of the best plan is outside the scope of my thesis,
         # but I will probably soon add some basic algorithm for this.
         return plans[0]
