@@ -66,7 +66,21 @@ class PostgresqlWrapper(Wrapper):
         return f"FROM {tables}"
 
     def _build_where(self) -> str:
-        where_conditions = ""
+        filters = self._build_filters()
+        values_filters = self._build_values()
+
+        if filters and values_filters:
+            where_conditions = f"{filters} AND {values_filters}"
+        else:
+            where_conditions = filters or values_filters
+
+        if not where_conditions:
+            return ""
+
+        return f"WHERE {where_conditions}"
+
+    def _build_filters(self) -> str:
+        filters = []
         for filter in self._constant_filters:
             # We can't use the variable name since in SQL, we cannot use an alias
             # in the WHERE clause.
@@ -81,12 +95,23 @@ class PostgresqlWrapper(Wrapper):
                 )
             native_operator = PostgresqlComparisonOperator[operator_name].value
 
-            if len(where_conditions) > 0:
-                where_conditions += " AND "
+            filters.append(f"{var_alias} {native_operator} '{filter.constant}'")
 
-            where_conditions += f"{var_alias} {native_operator} '{filter.constant}'"
+        return " AND ".join(filters)
 
-        if not where_conditions:
-            return ""
+    def _build_values(self) -> str:
+        values_filters = []
+        for values in self._values_filters:
+            var_alias = self._get_var_selection(
+                [x for x in self._projections if x.variable_id == values.variable_id][0]
+            )
 
-        return f"WHERE {where_conditions}"
+            if not values.constants:
+                raise PostgresqlWrapperError(
+                    f"VALUES clause for variable {var_alias} has no allowed values."
+                )
+
+            sql_value_strings = [f"'{x}'" for x in values.constants]
+            values_filters.append(f"{var_alias} IN ({','.join(sql_value_strings)})")
+
+        return " AND ".join(values_filters)

@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from querycat.src.merging.instance_merger import InstanceMerger
 
-from querycat.src.parsing.model import Filter, Variable
+from querycat.src.parsing.model import Filter, Values, Variable
 from querycat.src.querying.instance_model import InstanceCategory
 from querycat.src.querying.mapping_builder import MappingBuilder
 from querycat.src.querying.mapping_model import SimpleProperty
@@ -41,18 +41,20 @@ class QueryEngine:
         This method saves the compiled queries within each query part, which is why
         it returns `None`.
         """
-        new_schema_category = self.mmcat.get_schema_category()
+        where_schema_category = self.mmcat.get_schema_category()
         for part in plan.parts:
-            self._compile_query_part(part=part, new_schema_category=new_schema_category)
+            self._compile_query_part(
+                part=part, where_schema_category=where_schema_category
+            )
 
     def _compile_query_part(
-        self, part: QueryPart, new_schema_category: SchemaCategory
+        self, part: QueryPart, where_schema_category: SchemaCategory
     ) -> None:
         variable_types = get_variable_types_from_part(part, self.schema_category)
         wrapper = Wrapper.create(mapping=part.triples_mapping[0][1].mapping)
         mapping_builder = MappingBuilder(
             schema_category=self.schema_category,
-            where_schema_category=new_schema_category,
+            where_schema_category=where_schema_category,
         )
 
         for kind in get_kinds_from_part(part):
@@ -60,6 +62,7 @@ class QueryEngine:
 
         self._process_triples(part, variable_types, wrapper, mapping_builder)
         self._process_filters(part, wrapper)
+        self._process_values(part, wrapper)
 
         native_query, var_name_map = wrapper.build_statement()
         mapping_init = mapping_builder.build_mapping(var_name_map)
@@ -116,6 +119,20 @@ class QueryEngine:
                         operator=filter.operator,
                         constant=filter.rhs,
                     )
+
+    def _process_values(
+        self,
+        part: QueryPart,
+        wrapper: Wrapper,
+    ) -> None:
+        values_filters = (
+            values for values in part.statements if isinstance(values, Values)
+        )
+        for values in values_filters:
+            wrapper.add_values_filter(
+                variable_id=get_variable_id(values.variable),
+                constants=values.allowed_values,
+            )
 
     def execute_plan(self, plan: QueryPlan) -> InstanceCategory:
         """Given a query plan with a compiled native query for each

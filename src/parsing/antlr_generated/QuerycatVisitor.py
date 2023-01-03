@@ -19,12 +19,20 @@ class QuerycatVisitor(ParseTreeVisitor):
     def visitSelectQuery(self, ctx: QuerycatParser.SelectQueryContext):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by QuerycatParser#subSelect.
+    def visitSubSelect(self, ctx: QuerycatParser.SubSelectContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by QuerycatParser#selectClause.
     def visitSelectClause(self, ctx: QuerycatParser.SelectClauseContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by QuerycatParser#selectGraphPattern.
     def visitSelectGraphPattern(self, ctx: QuerycatParser.SelectGraphPatternContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by QuerycatParser#fromClause.
+    def visitFromClause(self, ctx: QuerycatParser.FromClauseContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by QuerycatParser#whereClause.
@@ -81,6 +89,18 @@ class QuerycatVisitor(ParseTreeVisitor):
     ):
         return self.visitChildren(ctx)
 
+    # Visit a parse tree produced by QuerycatParser#inlineData.
+    def visitInlineData(self, ctx: QuerycatParser.InlineDataContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by QuerycatParser#dataBlock.
+    def visitDataBlock(self, ctx: QuerycatParser.DataBlockContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by QuerycatParser#dataBlockValue.
+    def visitDataBlockValue(self, ctx: QuerycatParser.DataBlockValueContext):
+        return self.visitChildren(ctx)
+
     # Visit a parse tree produced by QuerycatParser#filter_.
     def visitFilter_(self, ctx: QuerycatParser.Filter_Context):
         return self.visitChildren(ctx)
@@ -123,6 +143,26 @@ class QuerycatVisitor(ParseTreeVisitor):
     def visitSchemaMorphismOrPath(
         self, ctx: QuerycatParser.SchemaMorphismOrPathContext
     ):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by QuerycatParser#pathAlternative.
+    def visitPathAlternative(self, ctx: QuerycatParser.PathAlternativeContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by QuerycatParser#pathSequence.
+    def visitPathSequence(self, ctx: QuerycatParser.PathSequenceContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by QuerycatParser#pathWithMod.
+    def visitPathWithMod(self, ctx: QuerycatParser.PathWithModContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by QuerycatParser#pathMod.
+    def visitPathMod(self, ctx: QuerycatParser.PathModContext):
+        return self.visitChildren(ctx)
+
+    # Visit a parse tree produced by QuerycatParser#pathPrimary.
+    def visitPathPrimary(self, ctx: QuerycatParser.PathPrimaryContext):
         return self.visitChildren(ctx)
 
     # Visit a parse tree produced by QuerycatParser#schemaMorphism.

@@ -8,6 +8,7 @@ from querycat.src.parsing.model import (
     Query,
     SelectClause,
     Triple,
+    Values,
     Variable,
     WhereClause,
 )
@@ -38,20 +39,21 @@ class QueryVisitor(QuerycatVisitor):
         return SelectClause(triples=triples, variables=[])
 
     def visitWhereClause(self, ctx: QuerycatParser.WhereClauseContext):
-        statements = self.visitGroupGraphPattern(ctx.groupGraphPattern())
+        triples, filters, values = self.visitGroupGraphPattern(ctx.groupGraphPattern())
 
         return WhereClause(
-            triples=statements[0],
+            triples=triples,
             variables=[],
-            filters=statements[1],
-            values=[],
+            filters=filters,
+            values=values,
         )
 
     def visitGroupGraphPattern(self, ctx: QuerycatParser.GroupGraphPatternContext):
         triples_lists = [self.visit(x) for x in ctx.triplesBlock()]
         filters = [self.visit(x) for x in ctx.filter_()]
         triples = [triple for list in triples_lists for triple in list]
-        return (triples, filters)
+        values = [self.visit(x) for x in ctx.graphPatternNotTriples()]
+        return (triples, filters, values)
 
     def visitSelectTriples(
         self, ctx: QuerycatParser.SelectTriplesContext
@@ -139,3 +141,10 @@ class QueryVisitor(QuerycatVisitor):
                 operator=ComparisonOperator(ctx.children[1].getText()),
                 rhs=self.visit(children[2]),
             )
+
+    def visitDataBlock(self, ctx: QuerycatParser.DataBlockContext):
+        variable = self.visit(ctx.var_())
+        return Values(
+            variable=variable,
+            allowed_values=[self.visit(x) for x in ctx.dataBlockValue()],
+        )

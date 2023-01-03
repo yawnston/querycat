@@ -25,6 +25,14 @@ class QuerycatListener(ParseTreeListener):
     def exitSelectQuery(self, ctx: QuerycatParser.SelectQueryContext):
         pass
 
+    # Enter a parse tree produced by QuerycatParser#subSelect.
+    def enterSubSelect(self, ctx: QuerycatParser.SubSelectContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#subSelect.
+    def exitSubSelect(self, ctx: QuerycatParser.SubSelectContext):
+        pass
+
     # Enter a parse tree produced by QuerycatParser#selectClause.
     def enterSelectClause(self, ctx: QuerycatParser.SelectClauseContext):
         pass
@@ -39,6 +47,14 @@ class QuerycatListener(ParseTreeListener):
 
     # Exit a parse tree produced by QuerycatParser#selectGraphPattern.
     def exitSelectGraphPattern(self, ctx: QuerycatParser.SelectGraphPatternContext):
+        pass
+
+    # Enter a parse tree produced by QuerycatParser#fromClause.
+    def enterFromClause(self, ctx: QuerycatParser.FromClauseContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#fromClause.
+    def exitFromClause(self, ctx: QuerycatParser.FromClauseContext):
         pass
 
     # Enter a parse tree produced by QuerycatParser#whereClause.
@@ -147,6 +163,30 @@ class QuerycatListener(ParseTreeListener):
     ):
         pass
 
+    # Enter a parse tree produced by QuerycatParser#inlineData.
+    def enterInlineData(self, ctx: QuerycatParser.InlineDataContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#inlineData.
+    def exitInlineData(self, ctx: QuerycatParser.InlineDataContext):
+        pass
+
+    # Enter a parse tree produced by QuerycatParser#dataBlock.
+    def enterDataBlock(self, ctx: QuerycatParser.DataBlockContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#dataBlock.
+    def exitDataBlock(self, ctx: QuerycatParser.DataBlockContext):
+        pass
+
+    # Enter a parse tree produced by QuerycatParser#dataBlockValue.
+    def enterDataBlockValue(self, ctx: QuerycatParser.DataBlockValueContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#dataBlockValue.
+    def exitDataBlockValue(self, ctx: QuerycatParser.DataBlockValueContext):
+        pass
+
     # Enter a parse tree produced by QuerycatParser#filter_.
     def enterFilter_(self, ctx: QuerycatParser.Filter_Context):
         pass
@@ -229,6 +269,46 @@ class QuerycatListener(ParseTreeListener):
 
     # Exit a parse tree produced by QuerycatParser#schemaMorphismOrPath.
     def exitSchemaMorphismOrPath(self, ctx: QuerycatParser.SchemaMorphismOrPathContext):
+        pass
+
+    # Enter a parse tree produced by QuerycatParser#pathAlternative.
+    def enterPathAlternative(self, ctx: QuerycatParser.PathAlternativeContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#pathAlternative.
+    def exitPathAlternative(self, ctx: QuerycatParser.PathAlternativeContext):
+        pass
+
+    # Enter a parse tree produced by QuerycatParser#pathSequence.
+    def enterPathSequence(self, ctx: QuerycatParser.PathSequenceContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#pathSequence.
+    def exitPathSequence(self, ctx: QuerycatParser.PathSequenceContext):
+        pass
+
+    # Enter a parse tree produced by QuerycatParser#pathWithMod.
+    def enterPathWithMod(self, ctx: QuerycatParser.PathWithModContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#pathWithMod.
+    def exitPathWithMod(self, ctx: QuerycatParser.PathWithModContext):
+        pass
+
+    # Enter a parse tree produced by QuerycatParser#pathMod.
+    def enterPathMod(self, ctx: QuerycatParser.PathModContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#pathMod.
+    def exitPathMod(self, ctx: QuerycatParser.PathModContext):
+        pass
+
+    # Enter a parse tree produced by QuerycatParser#pathPrimary.
+    def enterPathPrimary(self, ctx: QuerycatParser.PathPrimaryContext):
+        pass
+
+    # Exit a parse tree produced by QuerycatParser#pathPrimary.
+    def exitPathPrimary(self, ctx: QuerycatParser.PathPrimaryContext):
         pass
 
     # Enter a parse tree produced by QuerycatParser#schemaMorphism.
