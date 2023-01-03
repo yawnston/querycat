@@ -12,6 +12,12 @@ from querycat.src.querying.mapping_model import (
 from querycat.src.querying.model import KindId, KindName, VariableId, VariableNameMap
 
 
+class WrapperError(Exception):
+    """Base class for all errors emitted from wrappers."""
+
+    pass
+
+
 class Operation(ABC):
     """Base class for all operations which can be stored by the wrapper."""
 

@@ -2,10 +2,10 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Tuple
 from querycat.src.querying.model import VariableNameMap
-from querycat.src.wrappers.wrapper import Projection, Wrapper
+from querycat.src.wrappers.wrapper import Projection, Wrapper, WrapperError
 
 
-class PostgresqlWrapperError(Exception):
+class PostgresqlWrapperError(WrapperError):
     pass
 
 
