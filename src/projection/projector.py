@@ -1,6 +1,5 @@
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
 from typing import List, Tuple
 from uuid import uuid4
 from querycat.src.parsing.model import Triple
@@ -50,7 +49,7 @@ class QueryProjector:
     def _create_schema_category(
         self, plan: QueryPlan, where_instance: InstanceCategory
     ) -> SchemaCategory:
-        result_schema = SchemaCategory(objects=[], morphisms=[])
+        result_schema = SchemaCategory(id=uuid4().int, objects=[], morphisms=[])
         for triple in plan.query.select.triples:
             if isinstance(triple.object, str):
                 # The implementation does not support constants in the SELECT clause yet.

@@ -1,7 +1,13 @@
 from typing import List, Tuple
 from querycat.src.parsing.model import Query, Triple, Variable
 from querycat.src.querying.mapping_model import Signature
-from querycat.src.querying.model import QueryPart, VariableTypes
+from querycat.src.querying.model import (
+    Kind,
+    KindId,
+    QueryPart,
+    VariableId,
+    VariableTypes,
+)
 from querycat.src.querying.schema_model import (
     Id,
     Max,
@@ -77,8 +83,25 @@ def get_variable_types(
     return variable_types
 
 
+def get_kinds_from_part(part: QueryPart) -> List[Kind]:
+    """Given a query part, return the set of kinds occurring in
+    this query part. Note that there can be multiple kinds for
+    multiple variables which refer to the same underlying
+    database kind.
+    """
+    return [kind for _, kind in part.triples_mapping]
+
+
 def is_object_terminal(object: SchemaObject) -> bool:
     return object.ids == [Id(signatures=[Signature(ids=[], is_null=False)])]
+
+
+def get_variable_id(variable: Variable) -> VariableId:
+    return hash(variable.name)
+
+
+def get_kind_id(kind: Kind) -> KindId:
+    return id(kind.mapping)
 
 
 def find_path_in_schema(

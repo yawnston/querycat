@@ -25,10 +25,6 @@ def execute_query(
     planner = QueryPlanner(schema_category=schema_category, mappings=mappings)
     query_plans = planner.create_plans(preprocessed_query)
 
-    # Create new schema category for WHERE clause and set it as active
-    # TODO: do we copy the category earlier? because the mappings are set in variables
-    # We have to be careful about using the correct object IDs (they change, object keys don't)
-    # internal_category_id = 15
     internal_category_id = mmcat.copy_schema_category()
     mmcat_internal = MMCat(schema_id=internal_category_id, base_url=mmcat_base_url)
     engine = QueryEngine(schema_category=schema_category, mmcat=mmcat_internal)

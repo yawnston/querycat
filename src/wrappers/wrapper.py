@@ -1,52 +1,58 @@
+from abc import ABC
 from dataclasses import dataclass
-from typing import List
+from typing import Dict, List, Tuple
 from querycat.src.open_api_definition_client.models.database_view_type import (
     DatabaseViewType,
 )
-from querycat.src.querying.mapping_model import ComplexProperty, Mapping, Signature
+from querycat.src.querying.mapping_model import (
+    AccessPath,
+    Mapping,
+)
+from querycat.src.querying.model import KindId, KindName, VariableId, VariableNameMap
 
 
-class Operation:
+class Operation(ABC):
     ...
 
 
 @dataclass
 class Projection(Operation):
-    kind_name: str
-    property_name: str
-    signature: Signature
+    property_path: List[AccessPath]
+    kind_id: KindId
+    variable_id: VariableId
 
 
-class Wrapper:
+class Wrapper(ABC):
     """Generic interface for all database wrappers, each of which inherits
-    from this class.
+    from this class. These wrappers should implement the `build_statement`
+    method, which uses the information stored within the wrapper to build
+    a native database query for the corresponding database.
 
     All code should depend on this abstraction, rather than any concrete
     database wrapper.
     """
 
+    _kinds: Dict[KindId, KindName]
     _projections: List[Projection]
 
     def __init__(self):
+        self._kinds = {}
         self._projections = []
 
-    def add_projection(self, kind_name: str, property_name: str, signature: Signature):
+    def define_kind(self, kind_id: KindId, kind_name: KindName) -> None:
+        self._kinds[kind_id] = kind_name
+
+    def add_projection(
+        self, property_path: List[AccessPath], kind_id: KindId, variable_id: VariableId
+    ) -> None:
         self._projections.append(
             Projection(
-                kind_name=kind_name,
-                property_name=property_name,
-                signature=signature,
+                property_path=property_path, kind_id=kind_id, variable_id=variable_id
             )
         )
 
-    def add_selection(self):
-        pass
-
-    def build_statement(self) -> str:
+    def build_statement(self) -> Tuple[str, VariableNameMap]:
         raise Exception("Missing implementation of build_statement in wrapper class!")
-
-    def build_access_path(self) -> ComplexProperty:
-        raise Exception("Missing implementation of build_access_path in wrapper class!")
 
     @staticmethod
     def create(mapping: Mapping) -> "Wrapper":

@@ -115,7 +115,6 @@ class SimpleValue:
 @dataclass
 class AccessPath(ABC):
     name: Name
-    # value: Union[SimpleValue, "ComplexProperty"]
 
     def get_property_name(self, morphism: str, accumulator: str) -> Optional[str]:
         ...
@@ -151,7 +150,7 @@ class SimpleProperty(AccessPath):
         self, morphism: str, accumulator: List[int]
     ) -> Optional[List[int]]:
         new_accumulator = self.value.signature.ids + accumulator
-        # TODO: compound morphisms? we should trim this somehow
+        # This may need trimming in the case of compound morphisms
         if int(morphism) in self.value.signature.ids:
             return new_accumulator
 
@@ -197,7 +196,7 @@ class ComplexProperty(AccessPath):
         else:
             new_accumulator = accumulator
         if int(morphism) in self.signature.ids:
-            # TODO: what if it's for example the 2 in 1.2.3: {...}
+            # We need special handling for the case of 2 in 1.2.3: {...}
             return new_accumulator
 
         for subpath in self.subpaths:

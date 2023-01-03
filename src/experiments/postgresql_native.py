@@ -71,7 +71,11 @@ def run_experiment_postgresql():
             4 ?address .
     }
     """
-    result_instance = execute_query(query_string=query, schema_id=schema_id)
+    result_instance = execute_query(
+        query_string=query,
+        schema_id=schema_id,
+        mmcat_base_url=EXPERIMENTS_EVOCAT_BASE_URL,
+    )
     quecat_end_time = datetime.now()
 
     postgresql_elapsed_ms = (

@@ -15,16 +15,10 @@ class QueryPlan:
 
 
 @dataclass
-class JoinPlan:
-    ...
-
-
-@dataclass
 class QueryPart:
     triples_mapping: List[Tuple[Triple, "Kind"]]
     statements: List[Statement]
     compiled: Optional["QueryPartCompiled"] = None
-    ...
 
     def get_database(self):
         return self.triples_mapping[0][1].mapping.database
@@ -39,10 +33,17 @@ class QueryPartCompiled:
 @dataclass
 class Kind:
     mapping: Mapping
-    ...
 
 
 VariableTypes = Dict[str, SchemaObject]
+
+VariableId = int
+
+VariableNameMap = Dict[VariableId, List[str]]
+
+KindId = int
+
+KindName = str
 
 
 class InvalidQueryPlanError(Exception):

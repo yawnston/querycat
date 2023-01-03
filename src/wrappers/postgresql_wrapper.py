@@ -1,12 +1,6 @@
 from dataclasses import dataclass
-from querycat.src.querying.mapping_model import (
-    ComplexProperty,
-    Mapping,
-    Signature,
-    SimpleProperty,
-    SimpleValue,
-    StaticName,
-)
+from typing import Tuple
+from querycat.src.querying.model import VariableNameMap
 from querycat.src.wrappers.wrapper import Projection, Wrapper
 
 
@@ -19,54 +13,40 @@ class PostgresqlWrapper(Wrapper):
     def __init__(self):
         super().__init__()
 
-    def build_statement(self) -> str:
-        query = self._build_select()
+    def build_statement(self) -> Tuple[str, VariableNameMap]:
+        query, var_name_map = self._build_select()
         query += f" {self._build_from()}"
-        return query
+        return query, var_name_map
 
-    def _build_select(self) -> str:
+    def _build_select(self) -> Tuple[str, VariableNameMap]:
         var_selections = [
             self._get_var_alias(projection) for projection in self._projections
         ]
-        return f"SELECT {', '.join(var_selections)}"
+        var_name_map = {
+            x.variable_id: [self._get_var_name(x)] for x in self._projections
+        }
+
+        select = f"SELECT {', '.join(var_selections)}"
+        return select, var_name_map
 
     def _get_var_alias(self, projection: Projection) -> str:
-        selection = f"{projection.kind_name}.{projection.property_name}"
+        selection = f"{self._kinds[projection.kind_id]}.{projection.property_path[-1].name.value}"
         alias = self._get_var_name(projection)
         return f"{selection} AS {alias}"
 
     def _get_var_name(self, projection: Projection) -> str:
-        return f"{projection.kind_name}_{projection.property_name}"
+        return f"{self._kinds[projection.kind_id]}_{projection.property_path[-1].name.value}"
 
     def _build_from(self) -> str:
-        # TODO: joins
         tables = None
-        kind_names = {projection.kind_name for projection in self._projections}
-        for kind_name in kind_names:
+        for kind_id, kind_name in self._kinds.items():
             if tables is None:
                 tables = kind_name
             else:
-                raise Exception(
-                    "Joining tables is not yet implemented since MM-evocat does not support it!"
+                raise PostgresqlWrapperError(
+                    "Joining tables is not supported since MM-evocat does not support it!"
                 )
 
         if tables is None:
             raise PostgresqlWrapperError("No tables are selected in FROM clause.")
         return f"FROM {tables}"
-
-    def build_access_path(self) -> ComplexProperty:
-        # TODO: refactor this to have a separate PathBuilder object (not in the wrapper)
-        # TODO: more complex access paths, joins
-        subpaths = [
-            SimpleProperty(
-                name=StaticName(value=self._get_var_name(projection)),
-                value=SimpleValue(signature=projection.signature),
-            )
-            for projection in self._projections
-        ]
-        root = ComplexProperty(
-            name=StaticName(value="root"),
-            signature=Signature(ids=[0], is_null=True),
-            subpaths=subpaths,
-        )
-        return root

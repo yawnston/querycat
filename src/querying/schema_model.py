@@ -89,6 +89,7 @@ class SchemaMorphism:
 
 @dataclass
 class SchemaCategory:
+    id: int
     objects: List[SchemaObject]
     morphisms: List[SchemaMorphism]
 
@@ -116,6 +117,7 @@ class SchemaCategory:
     def from_category_view(schema_category: SchemaCategoryWrapper) -> "SchemaCategory":
         objects = [SchemaObject.from_object_view(x) for x in schema_category.objects]
         return SchemaCategory(
+            id=schema_category.id,
             objects=objects,
             morphisms=[
                 SchemaMorphism.from_morphism_view(x, objects)

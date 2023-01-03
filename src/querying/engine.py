@@ -1,10 +1,10 @@
 from dataclasses import dataclass
 from querycat.src.merging.instance_merger import InstanceMerger
-from querycat.src.open_api_definition_client.models.mapping_init import MappingInit
 
-from querycat.src.parsing.model import Triple, Variable
+from querycat.src.parsing.model import Variable
 from querycat.src.querying.instance_model import InstanceCategory
-from querycat.src.querying.mapping_model import Mapping
+from querycat.src.querying.mapping_builder import MappingBuilder
+from querycat.src.querying.mapping_model import SimpleProperty
 from querycat.src.querying.mmcat_client import MMCat
 from querycat.src.querying.model import (
     QueryPart,
@@ -14,6 +14,9 @@ from querycat.src.querying.model import (
 )
 from querycat.src.querying.schema_model import SchemaCategory
 from querycat.src.querying.utils import (
+    get_kind_id,
+    get_kinds_from_part,
+    get_variable_id,
     get_variable_types_from_part,
     is_object_terminal,
 )
@@ -22,10 +25,22 @@ from querycat.src.wrappers.wrapper import Wrapper
 
 @dataclass
 class QueryEngine:
+    """Query engine class which is responsible for the translation of
+    query parts into native queries, and the subsequent execution
+    of those query parts.
+    """
+
     schema_category: SchemaCategory
     mmcat: MMCat
 
     def compile_statements(self, plan: QueryPlan) -> None:
+        """For each query part in the given query plan, compile the corresponding
+        native database query, as well as the required mapping for the output
+        of this query.
+
+        This method saves the compiled queries within each query part, which is why
+        it returns `None`.
+        """
         new_schema_category = self.mmcat.get_schema_category()
         for part in plan.parts:
             self._compile_query_part(part=part, new_schema_category=new_schema_category)
@@ -35,39 +50,30 @@ class QueryEngine:
     ) -> None:
         variable_types = get_variable_types_from_part(part, self.schema_category)
         wrapper = Wrapper.create(mapping=part.triples_mapping[0][1].mapping)
-
-        self._process_triples(part, variable_types, wrapper)
-
-        # TODO: determining root object id in case of joins, this works only for no joins
-        root_kind_mapping = part.triples_mapping[0][1].mapping
-        root_object_key = self.schema_category.get_object(
-            root_kind_mapping.root_object_id
-        ).key
-        new_root_object = new_schema_category.get_object_by_key(
-            key=root_object_key.value
+        mapping_builder = MappingBuilder(
+            schema_category=self.schema_category,
+            where_schema_category=new_schema_category,
         )
-        mapping_init = MappingInit(
-            category_id=self.mmcat.schema_id,
-            json_value='{"name": "queryPartKind"}',
-            mapping_json_value=Mapping(
-                pkey=root_kind_mapping.pkey,
-                access_path=wrapper.build_access_path(),
-                kind_name=root_kind_mapping.kind_name,
-                database=root_kind_mapping.database,
-                root_object_id=new_root_object.id,
-                root_morphism_id=None,
-                category_id=self.mmcat.schema_id,
-            ).to_mapping_json_value(),
-            root_object_id=new_root_object.id,
-            database_id=root_kind_mapping.database.id,
-        )
+
+        for kind in get_kinds_from_part(part):
+            wrapper.define_kind(get_kind_id(kind), kind.mapping.kind_name)
+
+        self._process_triples(part, variable_types, wrapper, mapping_builder)
+
+        native_query, var_name_map = wrapper.build_statement()
+        mapping_init = mapping_builder.build_mapping(var_name_map)
+
         part.compiled = QueryPartCompiled(
-            db_query=wrapper.build_statement(),
+            db_query=native_query,
             mapping_init=mapping_init,
         )
 
     def _process_triples(
-        self, part: QueryPart, variable_types: VariableTypes, wrapper: Wrapper
+        self,
+        part: QueryPart,
+        variable_types: VariableTypes,
+        wrapper: Wrapper,
+        mapping_builder: MappingBuilder,
     ) -> None:
         for triple, kind in part.triples_mapping:
             subject = triple.subject
@@ -77,17 +83,35 @@ class QueryEngine:
             if isinstance(object, str):
                 raise Exception("Triples with string objects not yet implemented.")
             elif isinstance(object, Variable):
-                # TODO: nested properties in Mongo
                 if is_object_terminal(variable_types[object.name]):
+                    property_path = [
+                        x
+                        for x in kind.mapping.access_path.subpaths
+                        if isinstance(x, SimpleProperty)
+                        and x.value.signature.ids[0] == int(morphism)
+                    ]
                     wrapper.add_projection(
-                        kind_name=kind.mapping.kind_name,
-                        property_name=kind.mapping.get_property_name(morphism),
-                        signature=kind.mapping.get_signature(morphism),
+                        property_path=property_path,
+                        kind_id=get_kind_id(kind),
+                        variable_id=get_variable_id(object),
+                    )
+                    mapping_builder.define_variable(
+                        variable_id=get_variable_id(object),
+                        property_path=property_path,
+                        mapping=kind.mapping,
                     )
 
     def _process_filters(self) -> None:
         pass
 
     def execute_plan(self, plan: QueryPlan) -> InstanceCategory:
+        """Given a query plan with a compiled native query for each
+        of its query parts, execute these native statements and save
+        their results in an instance category in MM-evocat, returning
+        this instance category.
+
+        Note that the result instance category corresponds to the results
+        of the query's `WHERE` clause, not the entire query.
+        """
         merger = InstanceMerger(mmcat=self.mmcat)
         return merger.merge(query_plan=plan)

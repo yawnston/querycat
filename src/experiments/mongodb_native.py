@@ -80,7 +80,11 @@ def run_experiment_mongodb():
             5/1 ?customerId .
     }
     """
-    result_instance = execute_query(query_string=query, schema_id=schema_id)
+    result_instance = execute_query(
+        query_string=query,
+        schema_id=schema_id,
+        mmcat_base_url=EXPERIMENTS_EVOCAT_BASE_URL,
+    )
     quecat_end_time = datetime.now()
 
     mongodb_elapsed_ms = (mongodb_end_time - mongodb_start_time).total_seconds() * 1000
