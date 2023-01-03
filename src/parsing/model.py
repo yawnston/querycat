@@ -21,6 +21,7 @@ class WhereClause:
     triples: List["Triple"]
     variables: List["Variable"]
     filters: List["Filter"]
+    values: List["Values"]
 
 
 class ComparisonOperator(str, Enum):

@@ -51,14 +51,16 @@ class QueryPlanner:
         query_plans = []
         for assignment in assignments_product:
             try:
-                query_plan = self._split_query_parts(query, variable_types, assignment)
+                query_plan = self._create_plan_from_assignment(
+                    query, variable_types, assignment
+                )
                 query_plans.append(query_plan)
             except InvalidQueryPlanError:
                 continue
 
         return query_plans
 
-    def _split_query_parts(
+    def _create_plan_from_assignment(
         self, query: Query, variable_types: VariableTypes, assignment: tuple
     ) -> QueryPlan:
         initial_query_part = QueryPart(
@@ -67,7 +69,7 @@ class QueryPlanner:
             ],
             statements=[],
         )
-        finished_query_parts = []
+        finished_query_parts: List[QueryPart] = []
         query_part_queue = [initial_query_part]
         while query_part_queue:
             query_part = query_part_queue.pop()
@@ -84,6 +86,8 @@ class QueryPlanner:
                 variable_types, query_part
             )
             query_part_queue.extend(split_query_parts)
+
+        self._assign_statements_to_parts(query=query, parts=finished_query_parts)
 
         return QueryPlan(
             query=query, deferred_statements=[], parts=finished_query_parts
@@ -187,6 +191,25 @@ class QueryPlanner:
                     )
 
         return [new_query_part, query_part]
+
+    def _assign_statements_to_parts(self, query: Query, parts: List[QueryPart]) -> None:
+        """Given a list of finished query parts for a query plan, go through the non-triple
+        statements in the query and assign them to query parts.
+
+        Note that a single statement may be assigned to multiple query parts, for example
+        filtering the value of a variable which is selected from multiple query parts
+        must naturally apply this filter to all relevant query parts.
+        """
+        for part in parts:
+            for filter in query.where.filters:
+                for triple, _ in part.triples_mapping:
+                    if isinstance(filter.lhs, Variable) and filter.lhs == triple.object:
+                        part.statements.append(filter)
+
+            for values in query.where.values:
+                for triple, _ in part.triples_mapping:
+                    if values.variable == triple.object:
+                        part.statements.append(values)
 
     def select_best_plan(self, plans: List[QueryPlan]) -> QueryPlan:
         """Given a set of query plans, evaluate the cost of each plan

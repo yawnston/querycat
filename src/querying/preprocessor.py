@@ -23,6 +23,7 @@ class QueryPreprocessor:
             filters=query.where.filters,
             variables=query.where.variables,
             triples=where_triples,
+            values=query.where.values,
         )
         return Query(
             variables=query.variables,

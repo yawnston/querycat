@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from querycat.src.merging.instance_merger import InstanceMerger
 
-from querycat.src.parsing.model import Variable
+from querycat.src.parsing.model import Filter, Variable
 from querycat.src.querying.instance_model import InstanceCategory
 from querycat.src.querying.mapping_builder import MappingBuilder
 from querycat.src.querying.mapping_model import SimpleProperty
@@ -59,6 +59,7 @@ class QueryEngine:
             wrapper.define_kind(get_kind_id(kind), kind.mapping.kind_name)
 
         self._process_triples(part, variable_types, wrapper, mapping_builder)
+        self._process_filters(part, wrapper)
 
         native_query, var_name_map = wrapper.build_statement()
         mapping_init = mapping_builder.build_mapping(var_name_map)
@@ -101,8 +102,20 @@ class QueryEngine:
                         mapping=kind.mapping,
                     )
 
-    def _process_filters(self) -> None:
-        pass
+    def _process_filters(
+        self,
+        part: QueryPart,
+        wrapper: Wrapper,
+    ) -> None:
+        filters = (filter for filter in part.statements if isinstance(filter, Filter))
+        for filter in filters:
+            if isinstance(filter.lhs, Variable):
+                if isinstance(filter.rhs, str):
+                    wrapper.add_constant_filter(
+                        variable_id=get_variable_id(filter.lhs),
+                        operator=filter.operator,
+                        constant=filter.rhs,
+                    )
 
     def execute_plan(self, plan: QueryPlan) -> InstanceCategory:
         """Given a query plan with a compiled native query for each

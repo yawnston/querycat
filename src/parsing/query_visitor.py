@@ -3,6 +3,7 @@ from typing import List
 from querycat.src.parsing.antlr_generated.QuerycatParser import QuerycatParser
 from querycat.src.parsing.antlr_generated.QuerycatVisitor import QuerycatVisitor
 from querycat.src.parsing.model import (
+    ComparisonOperator,
     Filter,
     Query,
     SelectClause,
@@ -43,6 +44,7 @@ class QueryVisitor(QuerycatVisitor):
             triples=statements[0],
             variables=[],
             filters=statements[1],
+            values=[],
         )
 
     def visitGroupGraphPattern(self, ctx: QuerycatParser.GroupGraphPatternContext):
@@ -134,6 +136,6 @@ class QueryVisitor(QuerycatVisitor):
         if len(children) == 3:
             return Filter(
                 lhs=self.visit(children[0]),
-                operator=ctx.children[1].getText(),
+                operator=ComparisonOperator(ctx.children[1].getText()),
                 rhs=self.visit(children[2]),
             )
