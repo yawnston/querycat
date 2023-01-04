@@ -15,6 +15,8 @@ def execute_query(
     MM-evocat instance hosted at `mmcat_base_url`.
 
     Returns an instance category with the results of the query.
+    For details on what an instance category is, please refer to
+    Chapter 2 of my master's thesis.
     """
     query = QueryParser().parse(query_string)
     mmcat = MMCat(schema_id=schema_id, base_url=mmcat_base_url)
@@ -41,9 +43,14 @@ def execute_query(
 
 
 if __name__ == "__main__":
+    # If you want to run some queries, you can do it easily by modifying
+    # the query here in the main function. Also make sure that the
+    # schema_id and mmcat_base_url are configured correctly for your
+    # MM-evocat instance.
+
     query_string = """
         SELECT {
-            ?order orderId ?orderId ; 
+            ?order orderId ?orderId ;
                 customerName ?customerName ;
                 customerSurname ?customerSurname .
         }

@@ -8,6 +8,7 @@ from querycat.src.querying.mapping_builder import MappingBuilder
 from querycat.src.querying.mapping_model import AccessPath
 from querycat.src.querying.mmcat_client import MMCat
 from querycat.src.querying.model import (
+    InvalidQueryPlanError,
     Kind,
     QueryPart,
     QueryPartCompiled,
@@ -65,7 +66,8 @@ class QueryEngine:
         for kind in get_kinds_from_part(part):
             wrapper.define_kind(get_kind_id(kind), kind.mapping.kind_name)
 
-        self._process_triples(part, variable_types, wrapper, mapping_builder)
+        self._process_projection_triples(part, variable_types, wrapper, mapping_builder)
+        self._process_join_triples(part, variable_types, wrapper)
         self._process_filters(part, wrapper)
         self._process_values(part, wrapper)
 
@@ -77,7 +79,7 @@ class QueryEngine:
             mapping_init=mapping_init,
         )
 
-    def _process_triples(
+    def _process_projection_triples(
         self,
         part: QueryPart,
         variable_types: VariableTypes,
@@ -105,6 +107,55 @@ class QueryEngine:
                         variable_id=get_variable_id(object),
                         property_path=property_path,
                         mapping=kind.mapping,
+                    )
+
+    def _process_join_triples(
+        self,
+        part: QueryPart,
+        variable_types: VariableTypes,
+        wrapper: Wrapper,
+    ) -> None:
+        for tripleA, kindA in part.triples_mapping:
+            for tripleB, kindB in part.triples_mapping:
+                if (
+                    tripleA.object == tripleB.subject
+                    or tripleA.subject == tripleB.subject
+                ) and (kindA != kindB):
+                    intersection_var = tripleB.subject
+                    intersection_object = variable_types[intersection_var.name]
+                    intersection_identifier = None
+                    for identifier in intersection_object.ids:
+                        if all(
+                            (
+                                all(
+                                    (
+                                        kindA.mapping.get_property_name(
+                                            str(base_morphism)
+                                        )
+                                        for base_morphism in signature.ids
+                                    )
+                                )
+                                for signature in identifier.signatures
+                            )
+                        ):
+                            intersection_identifier = identifier
+
+                    if not intersection_identifier:
+                        raise InvalidQueryPlanError("Missing intersection identifier!")
+
+                    join_properties = []
+                    for signature in intersection_identifier.signatures:
+                        final_signature = signature.ids[0]
+                        lhs_property_path = self._get_property_path(
+                            str(final_signature), kindA
+                        )
+                        rhs_property_path = self._get_property_path(
+                            str(final_signature), kindB
+                        )
+                        join_properties.append((lhs_property_path, rhs_property_path))
+
+                    wrapper.add_join(
+                        get_kind_id(kindA), join_properties, get_kind_id(kindB)
                     )
 
     def _get_property_path(self, morphism: str, kind: Kind) -> List[AccessPath]:

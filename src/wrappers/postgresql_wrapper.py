@@ -68,12 +68,41 @@ class PostgresqlWrapper(Wrapper):
 
             return f"FROM {table}"
 
+        return f"FROM {self._build_joins()}"
+
+    def _build_joins(self) -> str:
         joined_kind_ids = []
         joined_tables = ""
-        for join in self._joins:
-            ...
 
-        return f"FROM {joined_tables}"
+        for join in self._joins:
+            if join.rhs_kind_id in joined_kind_ids:
+                new_kind_id = join.lhs_kind_id
+            else:
+                if not joined_kind_ids:
+                    joined_kind_ids.append(join.lhs_kind_id)
+                    joined_tables += self._kinds[join.lhs_kind_id]
+
+                new_kind_id = join.rhs_kind_id
+
+            joined_kind_ids.append(new_kind_id)
+            join_conditions = ""
+
+            for lhs_path, rhs_path in join.join_properties:
+                lhs_projection = (
+                    f"{self._kinds[join.lhs_kind_id]}.{lhs_path[-1].name.value}"
+                )
+                rhs_projection = (
+                    f"{self._kinds[join.rhs_kind_id]}.{rhs_path[-1].name.value}"
+                )
+
+                if join_conditions:
+                    join_conditions += " AND "
+
+                join_conditions += f"{lhs_projection} = {rhs_projection}"
+
+            joined_tables += f" JOIN {self._kinds[new_kind_id]} ON ({join_conditions})"
+
+        return joined_tables
 
     def _build_where(self) -> str:
         filters = self._build_filters()
