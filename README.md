@@ -54,7 +54,7 @@ The structure of the code is relatively simple, loosely following the strucutre 
 - Code which performs projection on the query results is in `src/projection/`
 - Experiments from the thesis are located in `src/experiments/`
 
-The repo also contains a couple of extra folders, namely `grammars/` which contains the MMQL grammar in the file `Querycat.g4`, and `notes/` which contains my personal notes I was making during the writing of my thesis. Don't expect to find anything useful in the notes, it's just a convenient place where I could keep my notes safe and versioned.
+The repo also contains the folder `grammars/` which contains the MMQL grammar in the file `Querycat.g4`. This grammar was used to generate the MMQL parser.
 
 ## Development
 
