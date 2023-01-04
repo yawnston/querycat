@@ -65,6 +65,25 @@ class ValuesFilter(Operation):
     constants: List[str]
 
 
+JoinProperties = List[Tuple[List[AccessPath], List[AccessPath]]]
+
+
+@dataclass
+class Join(Operation):
+    """Operation corresponding to an inner join between the
+    two specified kinds on the specified properties.
+
+    The `join_properties` contains a list of tuples, each of which
+    contains a property path from the left kind, meaning that this
+    property should be inner joined on equality to the corresponding
+    property from the right kind.
+    """
+
+    lhs_kind_id: KindId
+    join_properties: JoinProperties
+    rhs_kind_id: KindId
+
+
 class Wrapper(ABC):
     """Generic interface for all database wrappers, each of which inherits
     from this class. These wrappers should implement the `build_statement`
@@ -80,6 +99,7 @@ class Wrapper(ABC):
     _constant_filters: List[ConstantFilter]
     _variables_filters: List[VariablesFilter]
     _values_filters: List[ValuesFilter]
+    _joins: List[Join]
 
     def __init__(self):
         self._kinds = {}
@@ -87,6 +107,7 @@ class Wrapper(ABC):
         self._constant_filters = []
         self._variables_filters = []
         self._values_filters = []
+        self._joins = []
 
     def define_kind(self, kind_id: KindId, kind_name: KindName) -> None:
         self._kinds[kind_id] = kind_name
@@ -128,11 +149,47 @@ class Wrapper(ABC):
             ValuesFilter(variable_id=variable_id, constants=constants)
         )
 
+    def add_join(
+        self, lhs_kind_id: KindId, join_properties: JoinProperties, rhs_kind_id: KindId
+    ) -> None:
+        self._joins.append(
+            Join(
+                lhs_kind_id=lhs_kind_id,
+                join_properties=join_properties,
+                rhs_kind_id=rhs_kind_id,
+            )
+        )
+
     def build_statement(self) -> Tuple[str, VariableNameMap]:
+        """Build the native query using this wrapper, returning a tuple
+        `(native_query, variable_name_map)` where `native_query` is the compiled
+        native database query, and `variable_name_map` maps variable identifiers
+        to final name paths within the native query result.
+        """
         raise Exception("Missing implementation of build_statement in wrapper class!")
+
+    def is_join_supported(self) -> bool:
+        """Defines whether non-optional (inner) joins are supported."""
+        raise Exception("Missing implementation of is_join_supported in wrapper class!")
+
+    def is_optional_join_supported(self) -> bool:
+        """Defines whether optional (left outer) joins are supported."""
+        raise Exception(
+            "Missing implementation of is_optional_join_supported in wrapper class!"
+        )
+
+    def is_non_id_filter_supported(self) -> bool:
+        """Defines whether it is possible to filter on properties which are not
+        in an object's ids."""
+        raise Exception(
+            "Missing implementation of is_non_id_filter_supported in wrapper class!"
+        )
 
     @staticmethod
     def create(mapping: Mapping) -> "Wrapper":
+        """Factory method for wrappers which constructs a wrapper for the mapping's
+        corresponding database.
+        """
         from querycat.src.wrappers.mongodb_wrapper import MongodbWrapper
         from querycat.src.wrappers.postgresql_wrapper import PostgresqlWrapper
 

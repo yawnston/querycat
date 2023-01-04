@@ -23,6 +23,15 @@ class PostgresqlWrapper(Wrapper):
     def __init__(self):
         super().__init__()
 
+    def is_join_supported(self) -> bool:
+        return True
+
+    def is_optional_join_supported(self) -> bool:
+        return True
+
+    def is_non_id_filter_supported(self) -> bool:
+        return True
+
     def build_statement(self) -> Tuple[str, VariableNameMap]:
         query, var_name_map = self._build_select()
         query += f" {self._build_from()}"
@@ -52,18 +61,19 @@ class PostgresqlWrapper(Wrapper):
         return f"{self._kinds[projection.kind_id]}_{projection.property_path[-1].name.value}"
 
     def _build_from(self) -> str:
-        tables = None
-        for kind_id, kind_name in self._kinds.items():
-            if tables is None:
-                tables = kind_name
-            else:
-                raise PostgresqlWrapperError(
-                    "Joining tables is not supported since MM-evocat does not support it!"
-                )
+        if not self._joins:
+            table = next(iter(self._kinds.values()), None)
+            if table is None:
+                raise PostgresqlWrapperError("No tables are selected in FROM clause.")
 
-        if tables is None:
-            raise PostgresqlWrapperError("No tables are selected in FROM clause.")
-        return f"FROM {tables}"
+            return f"FROM {table}"
+
+        joined_kind_ids = []
+        joined_tables = ""
+        for join in self._joins:
+            ...
+
+        return f"FROM {joined_tables}"
 
     def _build_where(self) -> str:
         filters = self._build_filters()
@@ -96,6 +106,31 @@ class PostgresqlWrapper(Wrapper):
             native_operator = PostgresqlComparisonOperator[operator_name].value
 
             filters.append(f"{var_alias} {native_operator} '{filter.constant}'")
+
+        for filter in self._variables_filters:
+            lhs_var_alias = self._get_var_selection(
+                [
+                    x
+                    for x in self._projections
+                    if x.variable_id == filter.lhs_variable_id
+                ][0]
+            )
+            rhs_var_alias = self._get_var_selection(
+                [
+                    x
+                    for x in self._projections
+                    if x.variable_id == filter.rhs_variable_id
+                ][0]
+            )
+
+            operator_name = filter.operator.name
+            if not operator_name in PostgresqlComparisonOperator.__members__:
+                raise PostgresqlWrapperError(
+                    f"Comparison operator {filter.operator} is not supported by PostgreSQL!"
+                )
+            native_operator = PostgresqlComparisonOperator[operator_name].value
+
+            filters.append(f"{lhs_var_alias} {native_operator} {rhs_var_alias}")
 
         return " AND ".join(filters)
 

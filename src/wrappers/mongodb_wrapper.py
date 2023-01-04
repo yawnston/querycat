@@ -25,6 +25,15 @@ class MongodbWrapper(Wrapper):
     def __init__(self):
         super().__init__()
 
+    def is_join_supported(self) -> bool:
+        return False
+
+    def is_optional_join_supported(self) -> bool:
+        return True
+
+    def is_non_id_filter_supported(self) -> bool:
+        return True
+
     def build_statement(self) -> Tuple[str, VariableNameMap]:
         query = "db."
         query += self._base_collection_name()
@@ -54,7 +63,8 @@ class MongodbWrapper(Wrapper):
     def _build_aggregation_pipeline(self) -> List:
         pipeline = []
 
-        pipeline.append(self._build_filters())
+        pipeline.append(self._build_const_filters())
+        pipeline.extend(self._build_var_filters())
         pipeline.append(self._build_projection())
 
         return pipeline
@@ -70,7 +80,7 @@ class MongodbWrapper(Wrapper):
 
         return {"$project": project}
 
-    def _build_filters(self) -> Dict:
+    def _build_const_filters(self) -> Dict:
         filters = {}
 
         for constant_filter in self._constant_filters:
@@ -104,6 +114,32 @@ class MongodbWrapper(Wrapper):
             filters[prop_name] = {"$in": values.constants}
 
         return {"$match": filters}
+
+    def _build_var_filters(self) -> List[Dict]:
+        filter_stages = []
+
+        for filter in self._variables_filters:
+            lhs_projection = [
+                x for x in self._projections if x.variable_id == filter.lhs_variable_id
+            ][0]
+            lhs_prop_name = self._get_var_name(lhs_projection)
+            rhs_projection = [
+                x for x in self._projections if x.variable_id == filter.rhs_variable_id
+            ][0]
+            rhs_prop_name = self._get_var_name(rhs_projection)
+
+            operator_name = filter.operator.name
+            if not operator_name in MongodbComparisonOperator.__members__:
+                raise MongodbWrapperError(
+                    f"Comparison operator {filter.operator} is not supported by MongoDB!"
+                )
+            native_operator: str = MongodbComparisonOperator[operator_name].value
+
+            filter_stages.append(
+                {"$match": {"$expr": {native_operator: [lhs_prop_name, rhs_prop_name]}}}
+            )
+
+        return filter_stages
 
     def _build_var_name_map(self) -> VariableNameMap:
         return {x.variable_id: self._get_var_name_path(x) for x in self._projections}

@@ -136,6 +136,12 @@ class QueryEngine:
                         operator=filter.operator,
                         constant=filter.rhs,
                     )
+                elif isinstance(filter.rhs, Variable):
+                    wrapper.add_variables_filter(
+                        lhs_variable_id=get_variable_id(filter.lhs),
+                        operator=filter.operator,
+                        rhs_variable_id=get_variable_id(filter.rhs),
+                    )
 
     def _process_values(
         self,
