@@ -90,7 +90,7 @@ class QueryPlanner:
         self._assign_statements_to_parts(query=query, parts=finished_query_parts)
 
         return QueryPlan(
-            query=query, deferred_statements=[], parts=finished_query_parts
+            query=query, deferred_statements=[], parts=finished_query_parts, cost=0,
         )
 
     def _split_single_query_part(

@@ -12,6 +12,7 @@ class QueryPlan:
     query: Query
     parts: List["QueryPart"]
     deferred_statements: List[Statement]
+    cost: int
 
 
 @dataclass

@@ -71,7 +71,7 @@ def run_experiment_postgresql():
             4 ?address .
     }
     """
-    result_instance = execute_query(
+    result_instance, _ = execute_query(
         query_string=query,
         schema_id=schema_id,
         mmcat_base_url=EXPERIMENTS_EVOCAT_BASE_URL,

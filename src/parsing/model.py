@@ -15,6 +15,14 @@ class SelectClause:
     triples: List["Triple"]
     variables: List["Variable"]
 
+    def get_root_var(self) -> "Variable":
+        """Get root variable of the SELECT clause."""
+        for var in [x.subject for x in self.triples]:
+            if not any(x.object == var for x in self.triples):
+                return var
+
+        raise Exception("Cannot determine root variable of SELECT clause")
+
 
 @dataclass
 class WhereClause:
