@@ -5,8 +5,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import uvicorn
 
-from querycat.src.quecat import SchemaObjectInfo, create_query_plans, execute_query_json
-from querycat.src.querying.model import QueryPlan
+from querycat.src.quecat import execute_query_json
+from querycat.src.ui_helpers import SchemaObjectInfo, create_query_plans
 
 
 app = FastAPI()
@@ -80,6 +80,7 @@ def post_create_query_plans(query: QueryBody):
         query_string=query.query_string,
         schema_id=SCHEMA_ID,
         mmcat_base_url=MMCAT_BASE_URL,
+        get_db_info=True,
     )
 
     results: List[QueryPlanInfo] = []
@@ -89,6 +90,39 @@ def post_create_query_plans(query: QueryBody):
                 plan=QueryPlanView(
                     cost=plans[i].cost,
                     compiled=[x.compiled.db_query for x in plans[i].parts],
+                ),
+                object_info=obj_infos[i],
+            )
+        )
+
+    result_id = uuid4().hex
+    query_plans_dict[result_id] = QueryPlansResult(id=result_id, infos=results)
+    return query_plans_dict[result_id]
+
+
+@app.post("/query/objectinfo")
+def post_query_object_info(query: QueryBody):
+    try:
+        plans, obj_infos = create_query_plans(
+            query_string=query.query_string,
+            schema_id=SCHEMA_ID,
+            mmcat_base_url=MMCAT_BASE_URL,
+            get_db_info=False,
+        )
+    except Exception as e:
+        print(e)
+        return QueryPlansResult(id="dummy_id", infos=[])
+
+    results: List[QueryPlanInfo] = []
+    for i in range(len(plans)):
+        results.append(
+            QueryPlanInfo(
+                plan=QueryPlanView(
+                    cost=plans[i].cost,
+                    compiled=[
+                        x.compiled.db_query if x.compiled is not None else ""
+                        for x in plans[i].parts
+                    ],
                 ),
                 object_info=obj_infos[i],
             )
