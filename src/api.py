@@ -24,7 +24,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-SCHEMA_ID = 4
+SCHEMA_ID = 481
 MMCAT_BASE_URL = "http://localhost:27500"
 
 

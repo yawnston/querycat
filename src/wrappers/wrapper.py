@@ -161,6 +161,9 @@ class Wrapper(ABC):
             if existing_join == new_join:
                 print("Duplicate join found, ignoring")
                 return
+            elif existing_join.lhs_kind_id == rhs_kind_id and existing_join.rhs_kind_id == lhs_kind_id:
+                print("Reversed duplicate join found, ignoring")
+                return
 
         self._joins.append(
             Join(
