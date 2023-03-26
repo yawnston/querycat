@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 from querycat.src.parsing.query_parser import QueryParser
 from querycat.src.projection.json import instance_to_json
 from querycat.src.projection.projector import QueryProjector
@@ -11,7 +11,10 @@ from querycat.src.querying.preprocessor import QueryPreprocessor
 
 
 def execute_query(
-    query_string: str, schema_id: int, mmcat_base_url: str
+    query_string: str,
+    schema_id: int,
+    mmcat_base_url: str,
+    plan_num: Optional[int] = None,
 ) -> Tuple[InstanceCategory, QueryPlan]:
     """Given a MMQL `query_string`, execute this query against the
     schema category identified by `schema_id` stored in the
@@ -34,7 +37,10 @@ def execute_query(
     mmcat_internal = MMCat(schema_id=internal_category_id, base_url=mmcat_base_url)
     engine = QueryEngine(schema_category=schema_category, mmcat=mmcat_internal)
 
-    best_plan = planner.select_best_plan(query_plans)
+    if plan_num == None:
+        best_plan = planner.select_best_plan(query_plans)
+    else:
+        best_plan = query_plans[plan_num]
     engine.compile_statements(best_plan)
     where_instance = engine.execute_plan(best_plan)
 
@@ -49,11 +55,13 @@ def execute_query_json(
     query_string: str,
     schema_id: int,
     mmcat_base_url: str,
+    plan_num: Optional[int] = None,
 ) -> List[dict]:
     instance, best_plan = execute_query(
         query_string=query_string,
         schema_id=schema_id,
         mmcat_base_url=mmcat_base_url,
+        plan_num=plan_num,
     )
     return instance_to_json(instance, best_plan)
 

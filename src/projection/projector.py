@@ -154,8 +154,12 @@ class QueryProjector:
             while len(instance_path) > 1:
                 b = instance_path.pop()
                 a = instance_path.pop()
-                contraction = self._contract_morphisms(a, b)
-                instance_path.append(contraction)
+
+                if not a.mappings:
+                    instance_path.append(b)
+                else:
+                    contraction = self._contract_morphisms(a, b)
+                    instance_path.append(contraction)
 
             final_morphism = instance_path[0]
             signature = new_schema_morphism.signature.ids[0]

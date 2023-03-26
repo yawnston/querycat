@@ -54,7 +54,7 @@ def create_query_plans(
         query_plans = new_plans
 
     object_infos = []
-    variable_types = get_variable_types_from_query(query, schema_category)
+    variable_types = get_variable_types_from_query(preprocessed_query, schema_category)
     for plan in query_plans:
         object_info = []
         for schema_obj in schema_category.objects:
@@ -100,7 +100,7 @@ def create_query_plans(
                     is_in_filter=any(
                         [
                             x
-                            for x in query.where.filters
+                            for x in preprocessed_query.where.filters
                             if (
                                 isinstance(x.lhs, Variable) and x.lhs.name == object_var
                             )
@@ -110,14 +110,14 @@ def create_query_plans(
                         ]
                         + [
                             x
-                            for x in query.where.values
+                            for x in preprocessed_query.where.values
                             if x.variable.name == object_var
                         ]
                     ),
                     is_in_projection=any(
                         [
                             x
-                            for x in query.select.triples
+                            for x in preprocessed_query.select.triples
                             if (
                                 x.subject.name == object_var
                                 or (
@@ -130,7 +130,7 @@ def create_query_plans(
                     is_in_query=any(
                         [
                             x
-                            for x in query.where.triples
+                            for x in preprocessed_query.where.triples
                             if (
                                 x.subject.name == object_var
                                 or (

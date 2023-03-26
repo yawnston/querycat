@@ -152,6 +152,16 @@ class Wrapper(ABC):
     def add_join(
         self, lhs_kind_id: KindId, join_properties: JoinProperties, rhs_kind_id: KindId
     ) -> None:
+        new_join = Join(
+            lhs_kind_id=lhs_kind_id,
+            join_properties=join_properties,
+            rhs_kind_id=rhs_kind_id,
+        )
+        for existing_join in self._joins:
+            if existing_join == new_join:
+                print("Duplicate join found, ignoring")
+                return
+
         self._joins.append(
             Join(
                 lhs_kind_id=lhs_kind_id,

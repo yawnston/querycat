@@ -54,6 +54,22 @@ def execute_query_endpoint(query: QueryBody) -> QueryResult:
     return query_result_dict[result_id]
 
 
+@app.post("/query/execute/{plan_id}")
+def execute_query_endpoint(plan_id: str) -> QueryResult:
+    plans_result_id, plan_num = plan_id.split("_")
+    plan_query: str = query_plans_dict[plans_result_id].query
+    query_results = execute_query_json(
+        query_string=plan_query,
+        schema_id=SCHEMA_ID,
+        mmcat_base_url=MMCAT_BASE_URL,
+        plan_num=int(plan_num),
+    )
+    result_id = uuid4().hex
+    query_result_dict[result_id] = QueryResult(id=result_id, results=query_results)
+
+    return query_result_dict[result_id]
+
+
 @app.get("/query/{result_id}")
 def get_query_result(result_id) -> QueryResult:
     return query_result_dict[result_id]
@@ -71,6 +87,7 @@ class QueryPlanInfo(BaseModel):
 
 class QueryPlansResult(BaseModel):
     id: str
+    query: str
     infos: List[QueryPlanInfo]
 
 
@@ -96,7 +113,9 @@ def post_create_query_plans(query: QueryBody):
         )
 
     result_id = uuid4().hex
-    query_plans_dict[result_id] = QueryPlansResult(id=result_id, infos=results)
+    query_plans_dict[result_id] = QueryPlansResult(
+        id=result_id, infos=results, query=query.query_string
+    )
     return query_plans_dict[result_id]
 
 
@@ -129,7 +148,9 @@ def post_query_object_info(query: QueryBody):
         )
 
     result_id = uuid4().hex
-    query_plans_dict[result_id] = QueryPlansResult(id=result_id, infos=results)
+    query_plans_dict[result_id] = QueryPlansResult(
+        id=result_id, infos=results, query=query.query_string
+    )
     return query_plans_dict[result_id]
 
 
