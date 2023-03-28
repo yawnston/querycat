@@ -1,3 +1,4 @@
+import time
 from typing import List
 from uuid import uuid4
 from fastapi import FastAPI
@@ -38,18 +39,24 @@ class QueryBody(BaseModel):
 
 class QueryResult(BaseModel):
     id: str
+    seconds_elapsed: float
     results: List[dict]
 
 
 @app.post("/query/execute")
 def execute_query_endpoint(query: QueryBody) -> QueryResult:
+    start_time = time.perf_counter()
     query_results = execute_query_json(
         query_string=query.query_string,
         schema_id=SCHEMA_ID,
         mmcat_base_url=MMCAT_BASE_URL,
     )
+    end_time = time.perf_counter()
+
     result_id = uuid4().hex
-    query_result_dict[result_id] = QueryResult(id=result_id, results=query_results)
+    query_result_dict[result_id] = QueryResult(
+        id=result_id, seconds_elapsed=end_time - start_time, results=query_results
+    )
 
     return query_result_dict[result_id]
 
@@ -58,14 +65,20 @@ def execute_query_endpoint(query: QueryBody) -> QueryResult:
 def execute_query_endpoint(plan_id: str) -> QueryResult:
     plans_result_id, plan_num = plan_id.split("_")
     plan_query: str = query_plans_dict[plans_result_id].query
+
+    start_time = time.perf_counter()
     query_results = execute_query_json(
         query_string=plan_query,
         schema_id=SCHEMA_ID,
         mmcat_base_url=MMCAT_BASE_URL,
         plan_num=int(plan_num),
     )
+    end_time = time.perf_counter()
+
     result_id = uuid4().hex
-    query_result_dict[result_id] = QueryResult(id=result_id, results=query_results)
+    query_result_dict[result_id] = QueryResult(
+        id=result_id, seconds_elapsed=end_time - start_time, results=query_results
+    )
 
     return query_result_dict[result_id]
 
@@ -130,7 +143,7 @@ def post_query_object_info(query: QueryBody):
         )
     except Exception as e:
         print(e)
-        return QueryPlansResult(id="dummy_id", infos=[])
+        return QueryPlansResult(id="dummy_id", infos=[], query=query.query_string)
 
     results: List[QueryPlanInfo] = []
     for i in range(len(plans)):

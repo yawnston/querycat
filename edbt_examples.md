@@ -17,7 +17,7 @@ WHERE {
         4/7 ?city .
 
     FILTER(?name = "Alice")
-    VALUES ?status {"completed", "shipped"}
+    VALUES ?status {"completed" "shipped"}
 }
 ```
 
